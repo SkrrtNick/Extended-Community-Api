@@ -13,7 +13,7 @@ repositories {
 }
 
 dependencies {
-    api("com.github.TribotRS:automation-sdk:v0.0.2")
+    api("com.github.TribotRS:automation-sdk:latest.release")
     testImplementation(kotlin("test"))
 }
 
