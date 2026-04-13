@@ -14,6 +14,7 @@ repositories {
 
 dependencies {
     api("com.github.TribotRS:automation-sdk:latest.release")
+    implementation("com.google.code.gson:gson:2.11.0")
     testImplementation(kotlin("test"))
 }
 
