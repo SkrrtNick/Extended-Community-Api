@@ -22,7 +22,7 @@ import org.tribot.automation.script.logging.ScriptLogger
 import org.tribot.automation.script.util.Waiting
 
 // ---------------------------------------------------------------------------
-// Minimal fakes used exclusively for unit-testing SpellHelper.
+// Minimal fakes used exclusively for unit-testing SpellHelper / Staff / Spellbook.
 // Only the subset of ScriptContext actually exercised by the production code
 // is implemented; every other member throws if accidentally accessed.
 // ---------------------------------------------------------------------------
@@ -76,6 +76,27 @@ class FakeMagic : Magic {
     override fun getSelectedSpellName(): String? = null
 }
 
+/**
+ * A fake [Equipment] backed by a mutable list.
+ */
+class FakeEquipment(private val equipped: MutableList<EquippedItem> = mutableListOf()) : Equipment {
+    fun equip(item: EquippedItem) { equipped.add(item) }
+    fun clear() { equipped.clear() }
+    override fun getItems(): List<EquippedItem> = equipped.toList()
+    override fun getItemIn(slot: EquipmentSlot): EquippedItem? = equipped.find { it.slot == slot }
+    override fun isEquipped(itemId: Int): Boolean = equipped.any { it.id == itemId }
+    override fun clickSlot(slot: EquipmentSlot, option: String?): Boolean = false
+}
+
+/**
+ * A fake [Client] that only supports varbit lookups (for spellbook detection).
+ */
+class FakeClient : Client by io.mockk.mockk(relaxed = true) {
+    private val varbits = mutableMapOf<Int, Int>()
+    fun setFakeVarbit(id: Int, value: Int) { varbits[id] = value }
+    override fun getVarbitValue(varbitId: Int): Int = varbits.getOrDefault(varbitId, 0)
+}
+
 // A stub that throws on every member; individual test fixtures override the
 // properties they need with the fakes above.
 private fun stub(name: String): Nothing = throw UnsupportedOperationException("$name not faked")
@@ -83,9 +104,11 @@ private fun stub(name: String): Nothing = throw UnsupportedOperationException("$
 fun fakeContext(
     skills: FakeSkills = FakeSkills(),
     inventory: FakeInventory = FakeInventory(),
-    magic: FakeMagic = FakeMagic()
+    magic: FakeMagic = FakeMagic(),
+    equipment: FakeEquipment = FakeEquipment(),
+    client: FakeClient = FakeClient()
 ): ScriptContext = object : ScriptContext {
-    override val client: Client get() = stub("client")
+    override val client: Client = client
     override val clientThread: ClientThread get() = stub("clientThread")
     override val mouse: Mouse get() = stub("mouse")
     override val keyboard: Keyboard get() = stub("keyboard")
@@ -97,7 +120,7 @@ fun fakeContext(
     override val login: Login get() = stub("login")
     override val worldCache: WorldCache get() = stub("worldCache")
     override val inventory: Inventory = inventory
-    override val equipment: Equipment get() = stub("equipment")
+    override val equipment: Equipment = equipment
     override val tabs: Tabs get() = stub("tabs")
     override val skills: Skills = skills
     override val prayer: Prayer get() = stub("prayer")

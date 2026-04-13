@@ -21,23 +21,25 @@ object SpellHelper {
         ctx.magic.cast(spell.spellName)
 
     /**
-     * Checks whether the player currently meets the requirements to cast [spell]:
-     * sufficient Magic level **and** enough of every required rune in inventory.
-     *
-     * Note: this does *not* account for equipped staves that provide unlimited
-     * elemental runes, or other rune-saving effects. A future version could
-     * inspect equipment for elemental staves.
+     * Checks whether the player currently meets all requirements to cast [spell]:
+     * - Correct spellbook is active
+     * - Sufficient Magic level
+     * - Enough of every required rune (accounting for equipped staffs, tomes,
+     *   and combination runes)
      */
     fun canCast(ctx: ScriptContext, spell: Spell): Boolean {
+        if (Spellbook.getCurrent(ctx) != spell.spellbook) return false
         if (ctx.skills.getLevel(Skill.MAGIC) < spell.level) return false
         return spell.runes.all { req ->
-            ctx.inventory.getCount(req.rune.itemId) >= req.amount
+            req.rune.getAvailableCount(ctx) >= req.amount
         }
     }
 
     /**
      * Returns every spell on the given [spellbook] whose level requirement is
      * at or below the player's current Magic level.
+     *
+     * Does not check rune availability — use [getCastableSpells] for that.
      */
     fun getAvailableSpells(ctx: ScriptContext, spellbook: Spellbook): List<Spell> {
         val magicLevel = ctx.skills.getLevel(Skill.MAGIC)
@@ -45,15 +47,10 @@ object SpellHelper {
     }
 
     /**
-     * Returns every spell that the player can currently cast (correct spellbook,
-     * level, and runes) from the given [spellbook].
+     * Returns every spell that the player can currently cast from the given [spellbook]:
+     * correct spellbook active, sufficient level, and enough runes (including
+     * staff/tome/combo rune support).
      */
-    fun getCastableSpells(ctx: ScriptContext, spellbook: Spellbook): List<Spell> {
-        val magicLevel = ctx.skills.getLevel(Skill.MAGIC)
-        return Spell.entries.filter { spell ->
-            spell.spellbook == spellbook &&
-                spell.level <= magicLevel &&
-                spell.runes.all { req -> ctx.inventory.getCount(req.rune.itemId) >= req.amount }
-        }
-    }
+    fun getCastableSpells(ctx: ScriptContext, spellbook: Spellbook): List<Spell> =
+        Spell.entries.filter { it.spellbook == spellbook && canCast(ctx, it) }
 }

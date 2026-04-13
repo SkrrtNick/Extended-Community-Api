@@ -1,11 +1,28 @@
 package org.tribot.api.magic
 
+import org.tribot.automation.script.ScriptContext
+
 /**
  * The four spellbooks available in Old School RuneScape.
+ *
+ * The active spellbook is determined by varbit 4070:
+ * 0 = Standard, 1 = Ancient, 2 = Lunar, 3 = Arceuus
  */
-enum class Spellbook {
-    STANDARD,
-    ANCIENT,
-    LUNAR,
-    ARCEUUS
+enum class Spellbook(val varbitValue: Int) {
+    STANDARD(0),
+    ANCIENT(1),
+    LUNAR(2),
+    ARCEUUS(3);
+
+    companion object {
+        private const val SPELLBOOK_VARBIT = 4070
+
+        /**
+         * Returns the player's currently active spellbook.
+         */
+        fun getCurrent(ctx: ScriptContext): Spellbook {
+            val value = ctx.client.getVarbitValue(SPELLBOOK_VARBIT)
+            return entries.find { it.varbitValue == value } ?: STANDARD
+        }
+    }
 }
