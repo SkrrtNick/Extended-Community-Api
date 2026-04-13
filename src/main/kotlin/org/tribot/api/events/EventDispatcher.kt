@@ -17,8 +17,8 @@ import org.tribot.automation.script.event.ListenerRegistration
  * val dispatcher = EventDispatcher(ctx)
  * dispatcher.onStatChanged { skill, oldXp, newXp, _, _, _, _ -> println("Gained ${newXp - oldXp} xp") }
  * dispatcher.onNpcSpawned { npc -> println("${npc.name} appeared") }
- * dispatcher.watchVarbit(4070) // spellbook
- * dispatcher.onVarbitChanged { varbitId, oldVal, newVal -> println("Varbit $varbitId: $oldVal -> $newVal") }
+ * dispatcher.onVarbitChanged(4070) { old, new -> println("Spellbook: $old -> $new") }
+ * dispatcher.onWidgetOpened(465) { println("GE opened") }
  * dispatcher.start()
  * ```
  */
@@ -110,9 +110,33 @@ class EventDispatcher(private val ctx: ScriptContext) {
     fun onGroundItemSpawned(listener: (GroundItem) -> Unit) { groundItemSpawnedListeners.add(listener) }
     fun onGroundItemDespawned(listener: (GroundItem) -> Unit) { groundItemDespawnedListeners.add(listener) }
     fun onVarbitChanged(listener: (varbitId: Int, oldValue: Int, newValue: Int) -> Unit) { varbitChangedListeners.add(listener) }
+
+    /** Watches the given varbit and registers a change listener in one call. */
+    fun onVarbitChanged(varbitId: Int, listener: (oldValue: Int, newValue: Int) -> Unit) {
+        watchVarbit(varbitId)
+        varbitChangedListeners.add { id, old, new -> if (id == varbitId) listener(old, new) }
+    }
+
+    /** Watches multiple varbits and registers a change listener in one call. */
+    fun onVarbitChanged(vararg varbitIds: Int, listener: (varbitId: Int, oldValue: Int, newValue: Int) -> Unit) {
+        watchVarbits(*varbitIds)
+        varbitChangedListeners.add(listener)
+    }
     fun onGrandExchangeOfferChanged(listener: (slotIndex: Int, oldState: GrandExchangeOfferState?, newState: GrandExchangeOfferState) -> Unit) { geOfferChangedListeners.add(listener) }
     fun onWidgetOpened(listener: (groupId: Int) -> Unit) { widgetOpenedListeners.add(listener) }
     fun onWidgetClosed(listener: (groupId: Int) -> Unit) { widgetClosedListeners.add(listener) }
+
+    /** Watches the given widget group and registers an opened listener in one call. */
+    fun onWidgetOpened(groupId: Int, listener: () -> Unit) {
+        watchWidget(groupId)
+        widgetOpenedListeners.add { id -> if (id == groupId) listener() }
+    }
+
+    /** Watches the given widget group and registers a closed listener in one call. */
+    fun onWidgetClosed(groupId: Int, listener: () -> Unit) {
+        watchWidget(groupId)
+        widgetClosedListeners.add { id -> if (id == groupId) listener() }
+    }
     fun onAnimationChanged(listener: (actor: Actor, oldAnim: Int, newAnim: Int) -> Unit) { animationChangedListeners.add(listener) }
     fun onInteractingChanged(listener: (source: Actor, oldTarget: Actor?, newTarget: Actor?) -> Unit) { interactingChangedListeners.add(listener) }
     fun onHealthChanged(listener: (actor: Actor, oldRatio: Int, newRatio: Int) -> Unit) { healthChangedListeners.add(listener) }
