@@ -56,6 +56,14 @@ class EventDispatcher(private val ctx: ScriptContext) {
     private val watchedVarbits = mutableSetOf<Int>()
     private val varbitChangedListeners = mutableListOf<(varbitId: Int, oldValue: Int, newValue: Int) -> Unit>()
 
+    // Setting (varp) events
+    private val watchedSettings = mutableSetOf<Int>()
+    private val settingChangedListeners = mutableListOf<(settingId: Int, oldValue: Int, newValue: Int) -> Unit>()
+
+    // VarClient events
+    private val watchedVarcs = mutableSetOf<Int>()
+    private val varcChangedListeners = mutableListOf<(varcId: Int, oldValue: Int, newValue: Int) -> Unit>()
+
     // GE events
     private val geOfferChangedListeners = mutableListOf<(slotIndex: Int, oldState: GrandExchangeOfferState?, newState: GrandExchangeOfferState) -> Unit>()
 
@@ -86,6 +94,8 @@ class EventDispatcher(private val ctx: ScriptContext) {
     private var prevObjectKeys: Map<Long, TileObject> = emptyMap()
     private var prevGroundItemKeys: Map<Long, GroundItem> = emptyMap()
     private var prevVarbitValues: Map<Int, Int> = emptyMap()
+    private var prevSettingValues: Map<Int, Int> = emptyMap()
+    private var prevVarcValues: Map<Int, Int> = emptyMap()
     private var prevGeStates: Array<GrandExchangeOfferState?> = arrayOfNulls(8)
     private var prevWidgetVisible: Map<Int, Boolean> = emptyMap()
 
@@ -122,6 +132,34 @@ class EventDispatcher(private val ctx: ScriptContext) {
         watchVarbits(*varbitIds)
         varbitChangedListeners.add(listener)
     }
+    fun onSettingChanged(listener: (settingId: Int, oldValue: Int, newValue: Int) -> Unit) { settingChangedListeners.add(listener) }
+
+    /** Watches the given setting (varp) and registers a change listener in one call. */
+    fun onSettingChanged(settingId: Int, listener: (oldValue: Int, newValue: Int) -> Unit) {
+        watchSetting(settingId)
+        settingChangedListeners.add { id, old, new -> if (id == settingId) listener(old, new) }
+    }
+
+    /** Watches multiple settings and registers a change listener in one call. */
+    fun onSettingChanged(vararg settingIds: Int, listener: (settingId: Int, oldValue: Int, newValue: Int) -> Unit) {
+        watchSettings(*settingIds)
+        settingChangedListeners.add(listener)
+    }
+
+    fun onVarcChanged(listener: (varcId: Int, oldValue: Int, newValue: Int) -> Unit) { varcChangedListeners.add(listener) }
+
+    /** Watches the given VarClient int and registers a change listener in one call. */
+    fun onVarcChanged(varcId: Int, listener: (oldValue: Int, newValue: Int) -> Unit) {
+        watchVarc(varcId)
+        varcChangedListeners.add { id, old, new -> if (id == varcId) listener(old, new) }
+    }
+
+    /** Watches multiple VarClient ints and registers a change listener in one call. */
+    fun onVarcChanged(vararg varcIds: Int, listener: (varcId: Int, oldValue: Int, newValue: Int) -> Unit) {
+        watchVarcs(*varcIds)
+        varcChangedListeners.add(listener)
+    }
+
     fun onGrandExchangeOfferChanged(listener: (slotIndex: Int, oldState: GrandExchangeOfferState?, newState: GrandExchangeOfferState) -> Unit) { geOfferChangedListeners.add(listener) }
     fun onWidgetOpened(listener: (groupId: Int) -> Unit) { widgetOpenedListeners.add(listener) }
     fun onWidgetClosed(listener: (groupId: Int) -> Unit) { widgetClosedListeners.add(listener) }
@@ -141,9 +179,17 @@ class EventDispatcher(private val ctx: ScriptContext) {
     fun onInteractingChanged(listener: (source: Actor, oldTarget: Actor?, newTarget: Actor?) -> Unit) { interactingChangedListeners.add(listener) }
     fun onHealthChanged(listener: (actor: Actor, oldRatio: Int, newRatio: Int) -> Unit) { healthChangedListeners.add(listener) }
 
-    /** Register a varbit ID to watch for changes. Must be called before start(). */
+    /** Register a varbit ID to watch for changes. */
     fun watchVarbit(varbitId: Int) { watchedVarbits.add(varbitId) }
     fun watchVarbits(vararg varbitIds: Int) { watchedVarbits.addAll(varbitIds.toSet()) }
+
+    /** Register a setting (varp) ID to watch for changes. */
+    fun watchSetting(settingId: Int) { watchedSettings.add(settingId) }
+    fun watchSettings(vararg settingIds: Int) { watchedSettings.addAll(settingIds.toSet()) }
+
+    /** Register a VarClient int ID to watch for changes. */
+    fun watchVarc(varcId: Int) { watchedVarcs.add(varcId) }
+    fun watchVarcs(vararg varcIds: Int) { watchedVarcs.addAll(varcIds.toSet()) }
 
     /** Register a widget group ID to watch for open/close. */
     fun watchWidget(groupId: Int) { watchedWidgets.add(groupId) }
@@ -191,6 +237,8 @@ class EventDispatcher(private val ctx: ScriptContext) {
         prevObjectKeys = ctx.worldViews.getTopLevelObjects().associateBy { objectKey(it) }
         prevGroundItemKeys = ctx.worldViews.getTopLevelGroundItems().associateBy { groundItemKey(it) }
         prevVarbitValues = watchedVarbits.associateWith { ctx.client.getVarbitValue(it) }
+        prevSettingValues = watchedSettings.associateWith { ctx.client.getVarpValue(it) }
+        prevVarcValues = watchedVarcs.associateWith { ctx.client.getVarcIntValue(it) }
         snapshotGe()
         snapshotWidgets()
         snapshotActorsForFrame()
@@ -250,6 +298,8 @@ class EventDispatcher(private val ctx: ScriptContext) {
         pollObjects()
         pollGroundItems()
         pollVarbits()
+        pollSettings()
+        pollVarcs()
         pollGe()
         pollWidgets()
     }
@@ -392,6 +442,30 @@ class EventDispatcher(private val ctx: ScriptContext) {
             if (newValue != oldValue) {
                 prevVarbitValues = prevVarbitValues + (varbitId to newValue)
                 varbitChangedListeners.forEach { it(varbitId, oldValue, newValue) }
+            }
+        }
+    }
+
+    private fun pollSettings() {
+        if (settingChangedListeners.isEmpty() || watchedSettings.isEmpty()) return
+        for (settingId in watchedSettings) {
+            val newValue = ctx.client.getVarpValue(settingId)
+            val oldValue = prevSettingValues[settingId] ?: 0
+            if (newValue != oldValue) {
+                prevSettingValues = prevSettingValues + (settingId to newValue)
+                settingChangedListeners.forEach { it(settingId, oldValue, newValue) }
+            }
+        }
+    }
+
+    private fun pollVarcs() {
+        if (varcChangedListeners.isEmpty() || watchedVarcs.isEmpty()) return
+        for (varcId in watchedVarcs) {
+            val newValue = ctx.client.getVarcIntValue(varcId)
+            val oldValue = prevVarcValues[varcId] ?: 0
+            if (newValue != oldValue) {
+                prevVarcValues = prevVarcValues + (varcId to newValue)
+                varcChangedListeners.forEach { it(varcId, oldValue, newValue) }
             }
         }
     }
