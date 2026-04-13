@@ -4,24 +4,18 @@ import io.mockk.every
 import io.mockk.mockk
 import net.runelite.api.*
 import net.runelite.api.coords.WorldPoint
+import net.runelite.api.widgets.Widget
 import org.tribot.automation.script.ScriptContext
 import org.tribot.automation.script.core.definition.ItemDefinition
 import org.tribot.automation.script.core.definition.NpcDefinition
 import org.tribot.automation.script.core.definition.ObjectDefinition
 
-/**
- * Creates a mock ScriptContext with sensible defaults.
- * Individual tests can override specific behaviors.
- */
 fun fakeContext(block: ScriptContext.() -> Unit = {}): ScriptContext {
     val ctx = mockk<ScriptContext>(relaxed = true)
     ctx.block()
     return ctx
 }
 
-/**
- * Creates a mock NPC with the given properties.
- */
 fun fakeNpc(
     id: Int = 1,
     name: String = "Npc",
@@ -44,9 +38,6 @@ fun fakeNpc(
     return npc
 }
 
-/**
- * Creates a mock Player with the given properties.
- */
 fun fakePlayer(
     name: String = "Player",
     worldLocation: WorldPoint = WorldPoint(3200, 3200, 0),
@@ -61,9 +52,6 @@ fun fakePlayer(
     return player
 }
 
-/**
- * Creates a mock NpcDefinition.
- */
 fun fakeNpcDef(
     id: Int = 1,
     name: String = "Npc",
@@ -78,9 +66,6 @@ fun fakeNpcDef(
     return def
 }
 
-/**
- * Creates a mock ObjectDefinition.
- */
 fun fakeObjectDef(
     id: Int = 1,
     name: String = "Object",
@@ -93,9 +78,6 @@ fun fakeObjectDef(
     return def
 }
 
-/**
- * Creates a mock ItemDefinition.
- */
 fun fakeItemDef(
     id: Int = 1,
     name: String = "Item",
@@ -114,4 +96,32 @@ fun fakeItemDef(
     every { def.inventoryActions } returns inventoryActions
     every { def.isNoted() } returns noted
     return def
+}
+
+fun fakeWidget(
+    text: String? = null,
+    actions: Array<String?>? = null,
+    spriteId: Int = -1,
+    itemId: Int = -1,
+    type: Int = 0,
+    isHidden: Boolean = false,
+    isSelfHidden: Boolean = false,
+    index: Int = 0,
+    dynamicChildren: Array<Widget>? = null,
+    children: Array<Widget>? = null,
+    nestedChildren: Array<Widget>? = null
+): Widget {
+    val widget = mockk<Widget>(relaxed = true)
+    every { widget.text } returns text
+    every { widget.actions } returns actions
+    every { widget.spriteId } returns spriteId
+    every { widget.itemId } returns itemId
+    every { widget.type } returns type
+    every { widget.isHidden } returns isHidden
+    every { widget.isSelfHidden } returns isSelfHidden
+    every { widget.index } returns index
+    every { widget.dynamicChildren } returns dynamicChildren
+    every { widget.children } returns children
+    every { widget.nestedChildren } returns nestedChildren
+    return widget
 }
