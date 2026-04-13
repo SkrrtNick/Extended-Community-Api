@@ -1,4 +1,4 @@
-package org.tribot.api.playersense
+package org.tribot.api.preferences
 
 import java.util.Random
 

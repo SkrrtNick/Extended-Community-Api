@@ -1,8 +1,7 @@
-package org.tribot.api.playersense
+package org.tribot.api.preferences
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 class PlayerProfileTest {

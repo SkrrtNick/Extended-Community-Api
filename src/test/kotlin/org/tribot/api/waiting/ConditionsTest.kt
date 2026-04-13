@@ -1,9 +1,8 @@
 package org.tribot.api.waiting
 
-import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import org.tribot.api.playersense.PlayerProfile
+import org.tribot.api.preferences.PlayerProfile
 import org.tribot.automation.script.util.Waiting
 import kotlin.test.Test
 import kotlin.test.assertEquals

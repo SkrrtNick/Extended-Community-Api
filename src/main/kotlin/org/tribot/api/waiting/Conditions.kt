@@ -1,7 +1,7 @@
 package org.tribot.api.waiting
 
-import org.tribot.api.playersense.PlayerProfile
-import org.tribot.api.playersense.ProfileProperty
+import org.tribot.api.preferences.PlayerProfile
+import org.tribot.api.preferences.ProfileProperty
 import org.tribot.automation.script.util.Waiting
 
 object Conditions {
