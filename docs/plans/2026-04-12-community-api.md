@@ -2,9 +2,9 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Build a suite of higher-level APIs on top of the TribotRS automation-sdk, providing script authors with player profiling, conditional waiting, RuneMate-style entity queries, a composable requirements system, a bank-and-restock loadout manager, and a Grand Exchange API.
+**Goal:** Build a suite of higher-level APIs on top of the TribotRS automation-sdk, providing script authors with player profiling, conditional waiting, fluent entity queries, a composable requirements system, a bank-and-restock loadout manager, and a Grand Exchange API.
 
-**Architecture:** Extension library published via JitPack. All APIs take `ScriptContext` as their entry point. Player profile feeds humanized variance into waiting and other systems. Query builders wrap `WorldViews` + `Definitions` in a fluent RuneMate-style API. Requirements provide composable game-state checks. Loadout and GE build on top of queries and requirements.
+**Architecture:** Extension library published via JitPack. All APIs take `ScriptContext` as their entry point. Player profile feeds humanized variance into waiting and other systems. Query builders wrap `WorldViews` + `Definitions` in a fluent fluent API. Requirements provide composable game-state checks. Loadout and GE build on top of queries and requirements.
 
 **Tech Stack:** Kotlin 2.3.10, Java 21, automation-sdk (latest), RuneLite client API (transitive compileOnly), JUnit 5 + Mockito/MockK for testing.
 
@@ -724,7 +724,7 @@ git commit -m "feat: add conditional waiting / polling API"
 
 ---
 
-## Task 3: Query APIs — RuneMate-style Builders
+## Task 3: Query APIs — fluent Builders
 
 This is the largest task. We build it bottom-up: base classes first, then concrete builders.
 
@@ -1063,7 +1063,7 @@ package org.tribot.api.query
  * Abstract base for all query builders. Collects filters and applies them
  * when [results] is called.
  *
- * Follows the RuneMate pattern: reusable builders with fluent filter methods
+ * Reusable builders with fluent filter methods
  * and a terminal [results] call.
  *
  * @param T The entity type being queried

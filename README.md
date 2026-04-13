@@ -23,7 +23,7 @@ dependencies {
 ## Features
 
 ### Query Builders
-RuneMate-style fluent query builders for finding game entities. Reusable builders with filter chaining and a `QueryResults` wrapper.
+Fluent query builders for finding game entities. Reusable builders with filter chaining and a `QueryResults` wrapper.
 
 - **NPC, Object, GroundItem, Player** — distance, name, ID, action, animation, combat state filters + `nearest()`, `sortByDistance()`
 - **Inventory, Bank, Equipment** — name, ID, action, quantity filters
