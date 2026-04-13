@@ -48,7 +48,7 @@ object PriceLookup {
         try {
             val request = HttpRequest.newBuilder()
                 .uri(URI.create("$BASE_URL/latest"))
-                .header("User-Agent", "tribot-community-api")
+                .header("User-Agent", "osrs-pricing-client")
                 .GET()
                 .build()
 
