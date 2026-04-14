@@ -3,6 +3,11 @@ plugins {
     id("org.jetbrains.dokka") version "2.0.0"
     `java-library`
     `maven-publish`
+    application
+}
+
+application {
+    mainClass.set("org.tribot.api.MainKtKt")
 }
 
 group = "org.tribot"
