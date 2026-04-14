@@ -42,4 +42,9 @@ bin/
 .vscode/
 
 ### Mac OS ###
-.DS_Store.claude/worktrees/
+.DS_Store
+
+### Claude Code ###
+CLAUDE.md
+.claude/
+docs/plans/
