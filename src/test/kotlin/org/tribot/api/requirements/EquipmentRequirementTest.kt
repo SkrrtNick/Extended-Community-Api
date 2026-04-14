@@ -80,7 +80,7 @@ class EquipmentRequirementTest {
             lowAlch = 20000,
             buyLimit = 125,
             weight = 9.071,
-            examine = "A\"\"chainbody made of rune.",
+            examine = "A chainbody made of rune.",
             questItem = false,
             equipment = EquipmentStats(
                 slot = "body",
@@ -99,6 +99,59 @@ class EquipmentRequirementTest {
                 magicDamage = 0.0,
                 prayer = 0,
                 requirements = mapOf("Defence" to 40)
+            ),
+            weapon = null
+        )
+
+        // Synthetic item with multiple skill requirements
+        val multiReqItem = ItemDefinition(
+            id = 4587,
+            name = "Dragon scimitar",
+            members = true,
+            tradeable = true,
+            tradeableOnGe = true,
+            stackable = false,
+            cost = 100000,
+            highAlch = 60000,
+            lowAlch = 40000,
+            buyLimit = 70,
+            weight = 1.814,
+            examine = "A vicious, curved sword.",
+            questItem = false,
+            equipment = EquipmentStats(
+                slot = "weapon",
+                attackStab = 8, attackSlash = 67, attackCrush = -2,
+                attackMagic = 0, attackRanged = 0,
+                defenceStab = 0, defenceSlash = 0, defenceCrush = 0,
+                defenceMagic = 0, defenceRanged = 0,
+                meleeStrength = 66, rangedStrength = 0, magicDamage = 0.0,
+                prayer = 0,
+                requirements = mapOf("Attack" to 60, "Defence" to 40)
+            ),
+            weapon = null
+        )
+
+        // Synthetic item with an unknown skill name in requirements
+        val badSkillItem = ItemDefinition(
+            id = 9999,
+            name = "Weird item",
+            members = false,
+            tradeable = false,
+            tradeableOnGe = false,
+            stackable = false,
+            cost = 1,
+            highAlch = null, lowAlch = null, buyLimit = null, weight = null,
+            examine = null,
+            questItem = false,
+            equipment = EquipmentStats(
+                slot = "weapon",
+                attackStab = 0, attackSlash = 0, attackCrush = 0,
+                attackMagic = 0, attackRanged = 0,
+                defenceStab = 0, defenceSlash = 0, defenceCrush = 0,
+                defenceMagic = 0, defenceRanged = 0,
+                meleeStrength = 0, rangedStrength = 0, magicDamage = 0.0,
+                prayer = 0,
+                requirements = mapOf("Attack" to 50, "FakeSkill" to 99)
             ),
             weapon = null
         )
@@ -124,7 +177,9 @@ class EquipmentRequirementTest {
         val itemsMap = mapOf(
             "4151" to whip,
             "1113" to runeChainbody,
-            "995" to coins
+            "995" to coins,
+            "4587" to multiReqItem,
+            "9999" to badSkillItem
         )
         val json = gson.toJson(itemsMap)
         Files.writeString(tempDir.resolve("items.json"), json)
@@ -133,7 +188,7 @@ class EquipmentRequirementTest {
         val metadata = Metadata(
             version = 1,
             scrapedAt = "2025-01-15T12:00:00Z",
-            files = mapOf("items.json" to FileInfo(hash = hash, entries = 3))
+            files = mapOf("items.json" to FileInfo(hash = hash, entries = 5))
         )
         Files.writeString(tempDir.resolve("metadata.json"), gson.toJson(metadata))
 
@@ -193,7 +248,7 @@ class EquipmentRequirementTest {
     }
 
     @Test
-    fun `skillRequirements resolves multiple skills`() {
+    fun `skillRequirements resolves for different item`() {
         val req = EquipmentRequirement(
             itemId = 1113,
             slot = EquipmentSlot.BODY,
@@ -204,6 +259,35 @@ class EquipmentRequirementTest {
         assertEquals(1, skills.size)
         assertEquals(Skill.DEFENCE, skills[0].skill)
         assertEquals(40, skills[0].level)
+    }
+
+    @Test
+    fun `skillRequirements resolves multiple skill requirements`() {
+        val req = EquipmentRequirement(
+            itemId = 4587,
+            slot = EquipmentSlot.WEAPON,
+            displayName = "Dragon scimitar",
+            itemDatabase = itemDb
+        )
+        val skills = req.skillRequirements
+        assertEquals(2, skills.size)
+        val bySkill = skills.associateBy { it.skill }
+        assertEquals(60, bySkill[Skill.ATTACK]?.level)
+        assertEquals(40, bySkill[Skill.DEFENCE]?.level)
+    }
+
+    @Test
+    fun `skillRequirements skips unknown skill names`() {
+        val req = EquipmentRequirement(
+            itemId = 9999,
+            slot = EquipmentSlot.WEAPON,
+            displayName = "Weird item",
+            itemDatabase = itemDb
+        )
+        val skills = req.skillRequirements
+        assertEquals(1, skills.size)
+        assertEquals(Skill.ATTACK, skills[0].skill)
+        assertEquals(50, skills[0].level)
     }
 
     // -------------------------------------------------------------------------
