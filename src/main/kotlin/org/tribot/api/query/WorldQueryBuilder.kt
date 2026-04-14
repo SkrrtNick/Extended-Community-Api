@@ -1,13 +1,13 @@
 package org.tribot.api.query
 
-import org.tribot.automation.script.ScriptContext
+import org.tribot.api.ApiContext
 import org.tribot.automation.script.core.world.World
 import org.tribot.automation.script.core.world.WorldRegion
 
 /**
  * Fluent query builder for OSRS worlds.
  */
-class WorldQueryBuilder(private val ctx: ScriptContext) : QueryBuilder<World, WorldQueryBuilder>() {
+class WorldQueryBuilder : QueryBuilder<World, WorldQueryBuilder>() {
 
     fun members(): WorldQueryBuilder = filter { it.isMembers }
 
@@ -47,14 +47,14 @@ class WorldQueryBuilder(private val ctx: ScriptContext) : QueryBuilder<World, Wo
      * Uses the RuneLite Client.getWorld() value.
      */
     fun notCurrent(): WorldQueryBuilder = filter { world ->
-        world.number != ctx.client.world
+        world.number != ApiContext.get().client.world
     }
 
     fun activityContains(text: String): WorldQueryBuilder = filter { world ->
         world.activity?.contains(text, ignoreCase = true) == true
     }
 
-    override fun fetchEntities(): List<World> = ctx.worldCache.getAll()
+    override fun fetchEntities(): List<World> = ApiContext.get().worldCache.getAll()
 
     override fun results(): QueryResults<World> {
         val filtered = applyFilters(fetchEntities())

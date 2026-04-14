@@ -1,7 +1,7 @@
 package org.tribot.api.magic
 
 import net.runelite.api.Skill
-import org.tribot.automation.script.ScriptContext
+import org.tribot.api.ApiContext
 
 /**
  * Convenience helpers for casting spells and querying availability using the
@@ -17,8 +17,8 @@ object SpellHelper {
      *
      * @return true if the SDK reports the click was issued.
      */
-    fun cast(ctx: ScriptContext, spell: Spell): Boolean =
-        ctx.magic.cast(spell.spellName)
+    fun cast(spell: Spell): Boolean =
+        ApiContext.get().magic.cast(spell.spellName)
 
     /**
      * Checks whether the player currently meets all requirements to cast [spell]:
@@ -27,11 +27,11 @@ object SpellHelper {
      * - Enough of every required rune (accounting for equipped staffs, tomes,
      *   and combination runes)
      */
-    fun canCast(ctx: ScriptContext, spell: Spell): Boolean {
-        if (Spellbook.getCurrent(ctx) != spell.spellbook) return false
-        if (ctx.skills.getLevel(Skill.MAGIC) < spell.level) return false
+    fun canCast(spell: Spell): Boolean {
+        if (Spellbook.getCurrent() != spell.spellbook) return false
+        if (ApiContext.get().skills.getLevel(Skill.MAGIC) < spell.level) return false
         return spell.runes.all { req ->
-            req.rune.getAvailableCount(ctx) >= req.amount
+            req.rune.getAvailableCount() >= req.amount
         }
     }
 
@@ -41,8 +41,8 @@ object SpellHelper {
      *
      * Does not check rune availability — use [getCastableSpells] for that.
      */
-    fun getAvailableSpells(ctx: ScriptContext, spellbook: Spellbook): List<Spell> {
-        val magicLevel = ctx.skills.getLevel(Skill.MAGIC)
+    fun getAvailableSpells(spellbook: Spellbook): List<Spell> {
+        val magicLevel = ApiContext.get().skills.getLevel(Skill.MAGIC)
         return Spell.entries.filter { it.spellbook == spellbook && it.level <= magicLevel }
     }
 
@@ -51,6 +51,6 @@ object SpellHelper {
      * correct spellbook active, sufficient level, and enough runes (including
      * staff/tome/combo rune support).
      */
-    fun getCastableSpells(ctx: ScriptContext, spellbook: Spellbook): List<Spell> =
-        Spell.entries.filter { it.spellbook == spellbook && canCast(ctx, it) }
+    fun getCastableSpells(spellbook: Spellbook): List<Spell> =
+        Spell.entries.filter { it.spellbook == spellbook && canCast(it) }
 }

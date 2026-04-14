@@ -1,6 +1,6 @@
 package org.tribot.api.requirements
 
-import org.tribot.automation.script.ScriptContext
+import org.tribot.api.ApiContext
 import org.tribot.automation.script.core.tabs.PrayerType
 
 /**
@@ -11,8 +11,8 @@ class PrayerRequirement(
     val active: Boolean = true
 ) : Requirement {
 
-    override fun check(ctx: ScriptContext): Boolean {
-        val isActive = ctx.prayer.isActive(prayer)
+    override fun check(): Boolean {
+        val isActive = ApiContext.get().prayer.isActive(prayer)
         return isActive == active
     }
 

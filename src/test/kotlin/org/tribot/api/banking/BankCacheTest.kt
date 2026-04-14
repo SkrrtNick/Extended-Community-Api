@@ -1,10 +1,12 @@
 package org.tribot.api.banking
 
+import org.tribot.api.ApiContext
 import org.tribot.automation.script.ScriptContext
 import org.tribot.automation.script.core.widgets.BankItem
 import org.tribot.automation.script.core.widgets.Banking
 import org.tribot.automation.script.event.Events
 import org.tribot.automation.script.event.ListenerRegistration
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -12,6 +14,11 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class BankCacheTest {
+
+    @AfterTest
+    fun tearDown() {
+        ApiContext.reset()
+    }
 
     // -- Test helpers --
 
@@ -106,10 +113,10 @@ class BankCacheTest {
     fun `refresh when bank is open captures items`() {
         val items = listOf(BankItem(379, 100), BankItem(385, 50))
         val banking = FakeBanking(open = true, items = items)
-        val ctx = fakeContext(banking = banking)
+        ApiContext.init(fakeContext(banking = banking))
         val cache = BankCache()
 
-        cache.refresh(ctx)
+        cache.refresh()
 
         assertTrue(cache.isPopulated)
         assertTrue(cache.lastUpdateTime > 0)
@@ -120,10 +127,10 @@ class BankCacheTest {
     @Test
     fun `refresh when bank is closed does nothing`() {
         val banking = FakeBanking(open = false)
-        val ctx = fakeContext(banking = banking)
+        ApiContext.init(fakeContext(banking = banking))
         val cache = BankCache()
 
-        cache.refresh(ctx)
+        cache.refresh()
 
         assertFalse(cache.isPopulated)
         assertTrue(cache.getItems().isEmpty())
@@ -133,9 +140,9 @@ class BankCacheTest {
     fun `contains returns true for present item`() {
         val items = listOf(BankItem(379, 100), BankItem(385, 50))
         val banking = FakeBanking(open = true, items = items)
-        val ctx = fakeContext(banking = banking)
+        ApiContext.init(fakeContext(banking = banking))
         val cache = BankCache()
-        cache.refresh(ctx)
+        cache.refresh()
 
         assertTrue(cache.contains(379))
         assertTrue(cache.contains(385))
@@ -146,9 +153,9 @@ class BankCacheTest {
     fun `getCount returns quantity for item`() {
         val items = listOf(BankItem(379, 100), BankItem(385, 50))
         val banking = FakeBanking(open = true, items = items)
-        val ctx = fakeContext(banking = banking)
+        ApiContext.init(fakeContext(banking = banking))
         val cache = BankCache()
-        cache.refresh(ctx)
+        cache.refresh()
 
         assertEquals(100, cache.getCount(379))
         assertEquals(50, cache.getCount(385))
@@ -159,9 +166,9 @@ class BankCacheTest {
     fun `getCount sums quantities for duplicate item ids`() {
         val items = listOf(BankItem(379, 100), BankItem(379, 50))
         val banking = FakeBanking(open = true, items = items)
-        val ctx = fakeContext(banking = banking)
+        ApiContext.init(fakeContext(banking = banking))
         val cache = BankCache()
-        cache.refresh(ctx)
+        cache.refresh()
 
         assertEquals(150, cache.getCount(379))
     }
@@ -170,9 +177,9 @@ class BankCacheTest {
     fun `getTotalCount sums all item quantities`() {
         val items = listOf(BankItem(379, 100), BankItem(385, 50), BankItem(391, 25))
         val banking = FakeBanking(open = true, items = items)
-        val ctx = fakeContext(banking = banking)
+        ApiContext.init(fakeContext(banking = banking))
         val cache = BankCache()
-        cache.refresh(ctx)
+        cache.refresh()
 
         assertEquals(175, cache.getTotalCount())
     }
@@ -181,9 +188,9 @@ class BankCacheTest {
     fun `getUniqueItemCount returns number of distinct entries`() {
         val items = listOf(BankItem(379, 100), BankItem(385, 50), BankItem(391, 25))
         val banking = FakeBanking(open = true, items = items)
-        val ctx = fakeContext(banking = banking)
+        ApiContext.init(fakeContext(banking = banking))
         val cache = BankCache()
-        cache.refresh(ctx)
+        cache.refresh()
 
         assertEquals(3, cache.getUniqueItemCount())
     }
@@ -192,9 +199,9 @@ class BankCacheTest {
     fun `invalidate clears cache and resets state`() {
         val items = listOf(BankItem(379, 100))
         val banking = FakeBanking(open = true, items = items)
-        val ctx = fakeContext(banking = banking)
+        ApiContext.init(fakeContext(banking = banking))
         val cache = BankCache()
-        cache.refresh(ctx)
+        cache.refresh()
 
         assertTrue(cache.isPopulated)
         assertEquals(1, cache.getItems().size)
@@ -210,10 +217,10 @@ class BankCacheTest {
     fun `startListening registers a game tick listener`() {
         val eventsState = FakeEventsState()
         val events = createFakeEvents(eventsState)
-        val ctx = fakeContext(events = events)
+        ApiContext.init(fakeContext(events = events))
         val cache = BankCache()
 
-        val reg = cache.startListening(ctx)
+        val reg = cache.startListening()
 
         assertNotNull(reg)
         assertEquals(1, eventsState.registeredGameTickCallbacks.size)
@@ -225,9 +232,9 @@ class BankCacheTest {
         val banking = FakeBanking(open = true, items = items)
         val eventsState = FakeEventsState()
         val events = createFakeEvents(eventsState)
-        val ctx = fakeContext(banking = banking, events = events)
+        ApiContext.init(fakeContext(banking = banking, events = events))
         val cache = BankCache()
-        cache.startListening(ctx)
+        cache.startListening()
 
         // Simulate a game tick
         eventsState.registeredGameTickCallbacks.last().invoke()
@@ -242,9 +249,9 @@ class BankCacheTest {
         val banking = FakeBanking(open = false)
         val eventsState = FakeEventsState()
         val events = createFakeEvents(eventsState)
-        val ctx = fakeContext(banking = banking, events = events)
+        ApiContext.init(fakeContext(banking = banking, events = events))
         val cache = BankCache()
-        cache.startListening(ctx)
+        cache.startListening()
 
         // Simulate a game tick with bank closed
         eventsState.registeredGameTickCallbacks.last().invoke()
@@ -257,9 +264,9 @@ class BankCacheTest {
     fun `stopListening removes the registered listener`() {
         val eventsState = FakeEventsState()
         val events = createFakeEvents(eventsState)
-        val ctx = fakeContext(events = events)
+        ApiContext.init(fakeContext(events = events))
         val cache = BankCache()
-        cache.startListening(ctx)
+        cache.startListening()
 
         cache.stopListening()
 
@@ -270,14 +277,14 @@ class BankCacheTest {
     fun `startListening removes previous listener before registering new one`() {
         val eventsState = FakeEventsState()
         val events = createFakeEvents(eventsState)
-        val ctx = fakeContext(events = events)
+        ApiContext.init(fakeContext(events = events))
         val cache = BankCache()
 
-        cache.startListening(ctx)
+        cache.startListening()
         val firstReg = eventsState.registrations.first()
         assertFalse(firstReg.removed)
 
-        cache.startListening(ctx)
+        cache.startListening()
 
         assertTrue(firstReg.removed, "First listener should have been removed")
         assertEquals(2, eventsState.registrations.size)
@@ -288,9 +295,9 @@ class BankCacheTest {
     fun `getItems returns a defensive copy`() {
         val items = listOf(BankItem(379, 100))
         val banking = FakeBanking(open = true, items = items)
-        val ctx = fakeContext(banking = banking)
+        ApiContext.init(fakeContext(banking = banking))
         val cache = BankCache()
-        cache.refresh(ctx)
+        cache.refresh()
 
         val result1 = cache.getItems()
         val result2 = cache.getItems()

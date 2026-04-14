@@ -1,6 +1,6 @@
 package org.tribot.api.requirements
 
-import org.tribot.automation.script.ScriptContext
+import org.tribot.api.ApiContext
 
 /**
  * Requires a certain quantity of an item in inventory (or equipment if [equipped] is true).
@@ -16,7 +16,8 @@ class ItemRequirement(
 
     private val allIds: Set<Int> get() = setOf(itemId) + alternateIds
 
-    override fun check(ctx: ScriptContext): Boolean {
+    override fun check(): Boolean {
+        val ctx = ApiContext.get()
         if (equipped) {
             return ctx.equipment.getItems().any { it.id in allIds && it.quantity >= quantity }
         }

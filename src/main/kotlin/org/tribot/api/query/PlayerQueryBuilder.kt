@@ -1,13 +1,13 @@
 package org.tribot.api.query
 
 import net.runelite.api.Player
-import org.tribot.automation.script.ScriptContext
+import org.tribot.api.ApiContext
 
 /**
  * Fluent query builder for players in the game world.
  * By default, the local player is excluded from results.
  */
-class PlayerQueryBuilder(private val ctx: ScriptContext) : QueryBuilder<Player, PlayerQueryBuilder>() {
+class PlayerQueryBuilder : QueryBuilder<Player, PlayerQueryBuilder>() {
 
     private var includeLocal: Boolean = false
 
@@ -24,7 +24,7 @@ class PlayerQueryBuilder(private val ctx: ScriptContext) : QueryBuilder<Player, 
     fun notAnimating(): PlayerQueryBuilder = filter { it.animation == -1 }
 
     fun withinDistance(maxDistance: Int): PlayerQueryBuilder = filter { player ->
-        val playerLocation = ctx.worldViews.getLocalPlayer()?.worldLocation ?: return@filter false
+        val playerLocation = ApiContext.get().worldViews.getLocalPlayer()?.worldLocation ?: return@filter false
         player.worldLocation.distanceTo(playerLocation) <= maxDistance
     }
 
@@ -37,7 +37,7 @@ class PlayerQueryBuilder(private val ctx: ScriptContext) : QueryBuilder<Player, 
     override fun results(): LocatableQueryResults<Player> {
         var entities = fetchEntities()
         if (!includeLocal) {
-            val localPlayer = ctx.worldViews.getLocalPlayer()
+            val localPlayer = ApiContext.get().worldViews.getLocalPlayer()
             if (localPlayer != null) {
                 entities = entities.filter { it != localPlayer }
             }
@@ -47,5 +47,5 @@ class PlayerQueryBuilder(private val ctx: ScriptContext) : QueryBuilder<Player, 
     }
 
     override fun fetchEntities(): List<Player> =
-        ctx.worldViews.getTopLevelPlayers()
+        ApiContext.get().worldViews.getTopLevelPlayers()
 }

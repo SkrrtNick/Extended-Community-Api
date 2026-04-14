@@ -1,6 +1,6 @@
 package org.tribot.api.requirements
 
-import org.tribot.automation.script.ScriptContext
+import org.tribot.api.ApiContext
 
 /**
  * Requires a widget to be visible (or hidden).
@@ -12,8 +12,8 @@ class WidgetRequirement(
     private val name: String = "Widget $groupId:$childId"
 ) : Requirement {
 
-    override fun check(ctx: ScriptContext): Boolean {
-        val widget = ctx.client.getWidget(groupId, childId) ?: return !visible
+    override fun check(): Boolean {
+        val widget = ApiContext.get().client.getWidget(groupId, childId) ?: return !visible
         return widget.isHidden != visible
     }
 

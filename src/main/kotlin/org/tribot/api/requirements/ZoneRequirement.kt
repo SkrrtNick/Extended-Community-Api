@@ -1,7 +1,7 @@
 package org.tribot.api.requirements
 
 import net.runelite.api.coords.WorldPoint
-import org.tribot.automation.script.ScriptContext
+import org.tribot.api.ApiContext
 
 /**
  * Requires the player to be inside (or outside) a rectangular zone defined
@@ -14,8 +14,8 @@ class ZoneRequirement(
     private val name: String = "Zone (${southWest.x},${southWest.y})-(${northEast.x},${northEast.y})"
 ) : Requirement {
 
-    override fun check(ctx: ScriptContext): Boolean {
-        val pos = ctx.worldViews.getLocalPlayer()?.worldLocation ?: return false
+    override fun check(): Boolean {
+        val pos = ApiContext.get().worldViews.getLocalPlayer()?.worldLocation ?: return false
         val inZone = pos.x in southWest.x..northEast.x &&
             pos.y in southWest.y..northEast.y &&
             pos.plane in southWest.plane..northEast.plane

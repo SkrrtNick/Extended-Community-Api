@@ -1,7 +1,7 @@
 package org.tribot.api.requirements
 
 import net.runelite.api.Skill
-import org.tribot.automation.script.ScriptContext
+import org.tribot.api.ApiContext
 
 /**
  * Requires the player to have a minimum level in a [Skill].
@@ -13,7 +13,8 @@ class SkillRequirement(
     val boostable: Boolean = false
 ) : Requirement {
 
-    override fun check(ctx: ScriptContext): Boolean {
+    override fun check(): Boolean {
+        val ctx = ApiContext.get()
         val actual = if (boostable) ctx.skills.getBoostedLevel(skill) else ctx.skills.getLevel(skill)
         return actual >= level
     }

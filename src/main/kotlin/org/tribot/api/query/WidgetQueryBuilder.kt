@@ -1,7 +1,7 @@
 package org.tribot.api.query
 
 import net.runelite.api.widgets.Widget
-import org.tribot.automation.script.ScriptContext
+import org.tribot.api.ApiContext
 
 /**
  * Fluent query builder for searching RuneLite widgets within a specified group.
@@ -11,14 +11,14 @@ import org.tribot.automation.script.ScriptContext
  *
  * Usage:
  * ```
- * val results = WidgetQueryBuilder(ctx)
+ * val results = WidgetQueryBuilder()
  *     .group(219)
  *     .textContains("continue")
  *     .visible()
  *     .results()
  * ```
  */
-class WidgetQueryBuilder(private val ctx: ScriptContext) : QueryBuilder<Widget, WidgetQueryBuilder>() {
+class WidgetQueryBuilder : QueryBuilder<Widget, WidgetQueryBuilder>() {
 
     private var groupId: Int? = null
     private var searchChildren = true
@@ -106,7 +106,7 @@ class WidgetQueryBuilder(private val ctx: ScriptContext) : QueryBuilder<Widget, 
         // Iterate through root-level children of the group
         var index = 0
         while (true) {
-            val widget = ctx.client.getWidget(gid, index) ?: break
+            val widget = ApiContext.get().client.getWidget(gid, index) ?: break
             result.add(widget)
 
             if (searchChildren) {

@@ -1,6 +1,6 @@
 package org.tribot.api.magic
 
-import org.tribot.automation.script.ScriptContext
+import org.tribot.api.ApiContext
 
 /**
  * All rune types in Old School RuneScape with their item IDs and combo rune substitutes.
@@ -46,9 +46,9 @@ enum class RuneType(
      *
      * If a staff provides this rune type, returns [Int.MAX_VALUE].
      */
-    fun getAvailableCount(ctx: ScriptContext): Int {
-        if (this in Staff.getProvidedRunes(ctx)) return Int.MAX_VALUE
-        return allItemIds.sumOf { ctx.inventory.getCount(it) }
+    fun getAvailableCount(): Int {
+        if (this in Staff.getProvidedRunes()) return Int.MAX_VALUE
+        return allItemIds.sumOf { ApiContext.get().inventory.getCount(it) }
     }
 
     companion object {

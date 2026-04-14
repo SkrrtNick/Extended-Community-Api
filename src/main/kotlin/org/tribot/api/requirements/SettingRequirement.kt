@@ -1,6 +1,6 @@
 package org.tribot.api.requirements
 
-import org.tribot.automation.script.ScriptContext
+import org.tribot.api.ApiContext
 
 /**
  * Requires a setting (varplayer/varp) to satisfy a comparison against an expected value.
@@ -15,8 +15,8 @@ class SettingRequirement(
     private val name: String = "Setting $settingId ${operation.symbol} $value"
 ) : Requirement {
 
-    override fun check(ctx: ScriptContext): Boolean {
-        val actual = ctx.client.getVarpValue(settingId)
+    override fun check(): Boolean {
+        val actual = ApiContext.get().client.getVarpValue(settingId)
         return operation.check(actual, value)
     }
 

@@ -1,7 +1,5 @@
 package org.tribot.api.requirements
 
-import org.tribot.automation.script.ScriptContext
-
 /**
  * Boolean logic modes for combining multiple [Requirement] instances.
  */
@@ -17,8 +15,8 @@ enum class LogicType {
     /** Exactly one requirement must pass. */
     XOR;
 
-    fun test(requirements: List<Requirement>, ctx: ScriptContext): Boolean {
-        val passed = requirements.count { it.check(ctx) }
+    fun test(requirements: List<Requirement>): Boolean {
+        val passed = requirements.count { it.check() }
         return when (this) {
             AND -> passed == requirements.size
             OR -> passed > 0

@@ -1,7 +1,5 @@
 package org.tribot.api.requirements
 
-import org.tribot.automation.script.ScriptContext
-
 /**
  * A [Requirement] that delegates to a list of child requirements,
  * combining their results with the given [LogicType].
@@ -15,7 +13,7 @@ class CompositeRequirement(
     constructor(logicType: LogicType, vararg requirements: Requirement) :
         this(logicType, requirements.toList())
 
-    override fun check(ctx: ScriptContext): Boolean = logicType.test(requirements, ctx)
+    override fun check(): Boolean = logicType.test(requirements)
 
     override val displayText: String
         get() = name ?: requirements.joinToString(" ${logicType.name} ") { it.displayText }

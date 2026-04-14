@@ -1,6 +1,6 @@
 package org.tribot.api.requirements
 
-import org.tribot.automation.script.ScriptContext
+import org.tribot.api.ApiContext
 
 /**
  * Requires a quest to have reached a particular progress value (tracked via varbit).
@@ -12,8 +12,8 @@ class QuestRequirement(
     val operation: Operation = Operation.GREATER_EQUAL
 ) : Requirement {
 
-    override fun check(ctx: ScriptContext): Boolean {
-        val actual = ctx.client.getVarbitValue(varbitId)
+    override fun check(): Boolean {
+        val actual = ApiContext.get().client.getVarbitValue(varbitId)
         return operation.check(actual, requiredValue)
     }
 

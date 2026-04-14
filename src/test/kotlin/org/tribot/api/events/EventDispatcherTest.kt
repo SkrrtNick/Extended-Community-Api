@@ -3,6 +3,7 @@ package org.tribot.api.events
 import io.mockk.*
 import net.runelite.api.*
 import net.runelite.api.coords.WorldPoint
+import org.tribot.api.ApiContext
 import org.tribot.api.testing.fakeContext
 import org.tribot.api.testing.fakeNpc
 import org.tribot.api.testing.fakePlayer
@@ -12,12 +13,18 @@ import org.tribot.automation.script.core.tabs.EquipmentSlot
 import org.tribot.automation.script.core.tabs.EquippedItem
 import org.tribot.automation.script.core.tabs.InventoryItem
 import org.tribot.automation.script.event.ListenerRegistration
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class EventDispatcherTest {
+
+    @AfterTest
+    fun tearDown() {
+        ApiContext.reset()
+    }
 
     // --- Test helpers ---
 
@@ -88,6 +95,7 @@ class EventDispatcherTest {
             every { client.getWidget(any<Int>(), any()) } returns null
         }
 
+        ApiContext.init(ctx)
         return DispatcherTestHarness(ctx, tickSlot, renderSlot, tickReg, renderReg)
     }
 
@@ -124,7 +132,7 @@ class EventDispatcherTest {
     @Test
     fun `stat change fires listener with correct old and new values`() {
         val harness = buildDispatcherContext()
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         // Initial: ATTACK xp = 0
         every { harness.ctx.skills.getXp(Skill.ATTACK) } returns 0
@@ -151,7 +159,7 @@ class EventDispatcherTest {
     @Test
     fun `stat change fires with level and boosted level changes`() {
         val harness = buildDispatcherContext()
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         every { harness.ctx.skills.getXp(Skill.STRENGTH) } returns 1000
         every { harness.ctx.skills.getLevel(Skill.STRENGTH) } returns 10
@@ -183,7 +191,7 @@ class EventDispatcherTest {
     @Test
     fun `no stat change does not fire listener`() {
         val harness = buildDispatcherContext()
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         every { harness.ctx.skills.getXp(Skill.ATTACK) } returns 100
         every { harness.ctx.skills.getLevel(Skill.ATTACK) } returns 1
@@ -209,7 +217,7 @@ class EventDispatcherTest {
         val harness = buildDispatcherContext {
             initialInventory = initialItems
         }
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         var capturedOld: List<InventoryItem>? = null
         var capturedNew: List<InventoryItem>? = null
@@ -235,7 +243,7 @@ class EventDispatcherTest {
         val harness = buildDispatcherContext {
             initialInventory = items
         }
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         var fired = false
         dispatcher.onInventoryChanged { _, _ -> fired = true }
@@ -257,7 +265,7 @@ class EventDispatcherTest {
         val harness = buildDispatcherContext {
             initialEquipment = initialEquip
         }
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         var capturedOld: List<EquippedItem>? = null
         var capturedNew: List<EquippedItem>? = null
@@ -287,7 +295,7 @@ class EventDispatcherTest {
     @Test
     fun `npc spawned fires when new npc appears`() {
         val harness = buildDispatcherContext()
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         val spawnedNpcs = mutableListOf<NPC>()
         dispatcher.onNpcSpawned { npc -> spawnedNpcs.add(npc) }
@@ -311,7 +319,7 @@ class EventDispatcherTest {
         val harness = buildDispatcherContext {
             initialNpcs = listOf(goblin)
         }
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         val despawnedNpcs = mutableListOf<NPC>()
         dispatcher.onNpcDespawned { npc -> despawnedNpcs.add(npc) }
@@ -333,7 +341,7 @@ class EventDispatcherTest {
         val harness = buildDispatcherContext {
             initialNpcs = listOf(goblin)
         }
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         var spawnCount = 0
         var despawnCount = 0
@@ -355,7 +363,7 @@ class EventDispatcherTest {
     @Test
     fun `player spawned fires when new player appears`() {
         val harness = buildDispatcherContext()
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         val spawnedPlayers = mutableListOf<Player>()
         dispatcher.onPlayerSpawned { player -> spawnedPlayers.add(player) }
@@ -377,7 +385,7 @@ class EventDispatcherTest {
         val harness = buildDispatcherContext {
             initialPlayers = listOf(otherPlayer)
         }
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         val despawnedPlayers = mutableListOf<Player>()
         dispatcher.onPlayerDespawned { player -> despawnedPlayers.add(player) }
@@ -395,7 +403,7 @@ class EventDispatcherTest {
     @Test
     fun `local player is excluded from spawn and despawn events`() {
         val harness = buildDispatcherContext()
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         var spawnCount = 0
         var despawnCount = 0
@@ -417,7 +425,7 @@ class EventDispatcherTest {
     @Test
     fun `object spawned fires when new object appears`() {
         val harness = buildDispatcherContext()
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         val spawnedObjects = mutableListOf<TileObject>()
         dispatcher.onObjectSpawned { obj -> spawnedObjects.add(obj) }
@@ -437,7 +445,7 @@ class EventDispatcherTest {
         val harness = buildDispatcherContext {
             initialObjects = listOf(tree)
         }
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         val despawnedObjects = mutableListOf<TileObject>()
         dispatcher.onObjectDespawned { obj -> despawnedObjects.add(obj) }
@@ -457,7 +465,7 @@ class EventDispatcherTest {
     @Test
     fun `ground item spawned fires when new item appears`() {
         val harness = buildDispatcherContext()
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         val spawnedItems = mutableListOf<GroundItem>()
         dispatcher.onGroundItemSpawned { item -> spawnedItems.add(item) }
@@ -477,7 +485,7 @@ class EventDispatcherTest {
         val harness = buildDispatcherContext {
             initialGroundItems = listOf(bones)
         }
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         val despawnedItems = mutableListOf<GroundItem>()
         dispatcher.onGroundItemDespawned { item -> despawnedItems.add(item) }
@@ -497,7 +505,7 @@ class EventDispatcherTest {
     @Test
     fun `varbit change fires listener with old and new values`() {
         val harness = buildDispatcherContext()
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         every { harness.ctx.client.getVarbitValue(4070) } returns 0
 
@@ -521,7 +529,7 @@ class EventDispatcherTest {
     @Test
     fun `unwatched varbit does not fire listener`() {
         val harness = buildDispatcherContext()
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         var fired = false
         dispatcher.onVarbitChanged { _, _, _ -> fired = true }
@@ -537,7 +545,7 @@ class EventDispatcherTest {
     @Test
     fun `watchVarbits registers multiple varbits`() {
         val harness = buildDispatcherContext()
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         every { harness.ctx.client.getVarbitValue(4070) } returns 0
         every { harness.ctx.client.getVarbitValue(4071) } returns 0
@@ -566,7 +574,7 @@ class EventDispatcherTest {
         val harness = buildDispatcherContext {
             initialGeOffers = offers
         }
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         var capturedSlot = -1
         var capturedOldState: GrandExchangeOfferState? = null
@@ -596,7 +604,7 @@ class EventDispatcherTest {
         val harness = buildDispatcherContext {
             initialGeOffers = offers
         }
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         var fired = false
         dispatcher.onGrandExchangeOfferChanged { _, _, _ -> fired = true }
@@ -615,7 +623,7 @@ class EventDispatcherTest {
     @Test
     fun `widget opened fires when widget becomes visible`() {
         val harness = buildDispatcherContext()
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         // Initially null (not visible)
         every { harness.ctx.client.getWidget(465, 0) } returns null
@@ -637,7 +645,7 @@ class EventDispatcherTest {
     @Test
     fun `widget closed fires when widget becomes hidden`() {
         val harness = buildDispatcherContext()
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         // Initially visible
         val widget = fakeWidget(isHidden = false)
@@ -659,7 +667,7 @@ class EventDispatcherTest {
     @Test
     fun `unwatched widget does not fire events`() {
         val harness = buildDispatcherContext()
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         var fired = false
         dispatcher.onWidgetOpened { fired = true }
@@ -679,7 +687,7 @@ class EventDispatcherTest {
     @Test
     fun `animation change fires listener for local player`() {
         val harness = buildDispatcherContext()
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         val localPlayer = harness.ctx.worldViews.getLocalPlayer()!!
         every { localPlayer.animation } returns -1
@@ -707,7 +715,7 @@ class EventDispatcherTest {
         val harness = buildDispatcherContext {
             initialNpcs = listOf(goblin)
         }
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         val events = mutableListOf<Triple<Actor, Int, Int>>()
         dispatcher.onAnimationChanged { actor, oldAnim, newAnim ->
@@ -732,7 +740,7 @@ class EventDispatcherTest {
     @Test
     fun `interacting change fires listener`() {
         val harness = buildDispatcherContext()
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         val localPlayer = harness.ctx.worldViews.getLocalPlayer()!!
         every { localPlayer.interacting } returns null
@@ -769,7 +777,7 @@ class EventDispatcherTest {
         val harness = buildDispatcherContext {
             initialNpcs = listOf(goblin)
         }
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         val events = mutableListOf<Triple<Actor, Int, Int>>()
         dispatcher.onHealthChanged { actor, oldRatio, newRatio ->
@@ -794,7 +802,7 @@ class EventDispatcherTest {
     @Test
     fun `empty dispatcher with no listeners does not crash on tick`() {
         val harness = buildDispatcherContext()
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
         dispatcher.start()
 
         // Simulate tick -- should not throw
@@ -804,7 +812,7 @@ class EventDispatcherTest {
     @Test
     fun `empty dispatcher with no frame listeners does not register render callback`() {
         val harness = buildDispatcherContext()
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
         dispatcher.start()
 
         // renderSlot should NOT be captured because no frame listeners were registered
@@ -824,7 +832,7 @@ class EventDispatcherTest {
             initialNpcs = listOf(goblin)
             initialInventory = listOf(InventoryItem(995, 100, 0))
         }
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         var npcSpawnFired = false
         var inventoryChangeFired = false
@@ -848,7 +856,7 @@ class EventDispatcherTest {
     @Test
     fun `stop removes listener registrations`() {
         val harness = buildDispatcherContext()
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         dispatcher.onStatChanged { _, _, _, _, _, _, _ -> }
         dispatcher.start()
@@ -860,7 +868,7 @@ class EventDispatcherTest {
     @Test
     fun `polling after stop does not fire events`() {
         val harness = buildDispatcherContext()
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         every { harness.ctx.skills.getXp(Skill.ATTACK) } returns 0
 
@@ -880,7 +888,7 @@ class EventDispatcherTest {
     @Test
     fun `stop with frame listeners removes render registration`() {
         val harness = buildDispatcherContext()
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         val localPlayer = harness.ctx.worldViews.getLocalPlayer()!!
         every { localPlayer.animation } returns -1
@@ -902,7 +910,7 @@ class EventDispatcherTest {
     @Test
     fun `multiple listeners for same event all fire`() {
         val harness = buildDispatcherContext()
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         every { harness.ctx.skills.getXp(Skill.ATTACK) } returns 0
 
@@ -931,7 +939,7 @@ class EventDispatcherTest {
         val harness = buildDispatcherContext {
             initialNpcs = listOf(goblin)
         }
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         val spawned = mutableListOf<NPC>()
         val despawned = mutableListOf<NPC>()
@@ -961,7 +969,7 @@ class EventDispatcherTest {
         val harness = buildDispatcherContext()
         // Override to return null after context is built
         every { harness.ctx.client.grandExchangeOffers } returns null
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         dispatcher.onGrandExchangeOfferChanged { _, _, _ -> }
         dispatcher.start()
@@ -977,7 +985,7 @@ class EventDispatcherTest {
     @Test
     fun `watchWidgets registers multiple widget groups`() {
         val harness = buildDispatcherContext()
-        val dispatcher = EventDispatcher(harness.ctx)
+        val dispatcher = EventDispatcher()
 
         every { harness.ctx.client.getWidget(465, 0) } returns null
         every { harness.ctx.client.getWidget(270, 0) } returns null

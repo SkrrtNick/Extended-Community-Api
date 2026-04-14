@@ -4,6 +4,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import net.runelite.api.Skill
+import org.tribot.api.ApiContext
 import org.tribot.api.testing.fakeContext
 import org.tribot.automation.script.core.tabs.Inventory
 import org.tribot.automation.script.core.tabs.InventoryItem
@@ -12,6 +13,11 @@ import org.tribot.automation.script.util.Waiting
 import kotlin.test.*
 
 class ConsumableDatabaseTest {
+
+    @AfterTest
+    fun tearDown() {
+        ApiContext.reset()
+    }
 
     // =========================================================================
     // Food lookup tests
@@ -487,11 +493,11 @@ class ConsumableDatabaseTest {
         val inventory = mockk<Inventory>(relaxed = true)
         every { inventory.contains(385) } returns false
 
-        val ctx = fakeContext {
+        ApiContext.init(fakeContext {
             every { this@fakeContext.inventory } returns inventory
-        }
+        })
 
-        assertFalse(ConsumableHelper.eat(ctx, 385))
+        assertFalse(ConsumableHelper.eat(385))
     }
 
     @Test
@@ -509,13 +515,13 @@ class ConsumableDatabaseTest {
             if (hpCallCount++ == 0) 80 else 99
         }
 
-        val ctx = fakeContext {
+        ApiContext.init(fakeContext {
             every { this@fakeContext.inventory } returns inventory
             every { this@fakeContext.skills } returns skills
             every { this@fakeContext.waiting } returns waiting
-        }
+        })
 
-        val result = ConsumableHelper.eat(ctx, 385)
+        val result = ConsumableHelper.eat(385)
         assertTrue(result)
         verify { inventory.clickItem(385, "Eat") }
     }
@@ -525,11 +531,11 @@ class ConsumableDatabaseTest {
         val inventory = mockk<Inventory>(relaxed = true)
         every { inventory.contains(2434) } returns false
 
-        val ctx = fakeContext {
+        ApiContext.init(fakeContext {
             every { this@fakeContext.inventory } returns inventory
-        }
+        })
 
-        assertFalse(ConsumableHelper.drink(ctx, 2434))
+        assertFalse(ConsumableHelper.drink(2434))
     }
 
     @Test
@@ -544,12 +550,12 @@ class ConsumableDatabaseTest {
         }
         every { inventory.clickItem(2434, "Drink") } returns true
 
-        val ctx = fakeContext {
+        ApiContext.init(fakeContext {
             every { this@fakeContext.inventory } returns inventory
             every { this@fakeContext.waiting } returns waiting
-        }
+        })
 
-        val result = ConsumableHelper.drink(ctx, 2434)
+        val result = ConsumableHelper.drink(2434)
         assertTrue(result)
         verify { inventory.clickItem(2434, "Drink") }
     }
@@ -582,11 +588,11 @@ class ConsumableDatabaseTest {
         val inventory = mockk<Inventory>(relaxed = true)
         every { inventory.getItems() } returns listOf(sharkItem, lobsterItem)
 
-        val ctx = fakeContext {
+        ApiContext.init(fakeContext {
             every { this@fakeContext.inventory } returns inventory
-        }
+        })
 
-        val best = ConsumableHelper.findBestFood(ctx)
+        val best = ConsumableHelper.findBestFood()
         assertNotNull(best)
         assertEquals(385, best.itemId)  // Shark
     }

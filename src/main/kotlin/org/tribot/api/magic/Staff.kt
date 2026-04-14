@@ -1,6 +1,6 @@
 package org.tribot.api.magic
 
-import org.tribot.automation.script.ScriptContext
+import org.tribot.api.ApiContext
 
 /**
  * Staves and tomes that provide unlimited runes when equipped.
@@ -61,15 +61,15 @@ enum class Staff(
         /**
          * Returns all staffs/tomes currently equipped.
          */
-        fun getEquipped(ctx: ScriptContext): List<Staff> {
-            val equippedIds = ctx.equipment.getItems().map { it.id }.toSet()
+        fun getEquipped(): List<Staff> {
+            val equippedIds = ApiContext.get().equipment.getItems().map { it.id }.toSet()
             return entries.filter { staff -> staff.itemIds.any { it in equippedIds } }
         }
 
         /**
          * Returns the set of rune types provided by all currently equipped staffs/tomes.
          */
-        fun getProvidedRunes(ctx: ScriptContext): Set<RuneType> =
-            getEquipped(ctx).flatMap { it.providedRunes }.toSet()
+        fun getProvidedRunes(): Set<RuneType> =
+            getEquipped().flatMap { it.providedRunes }.toSet()
     }
 }

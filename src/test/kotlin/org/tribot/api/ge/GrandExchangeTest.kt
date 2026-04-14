@@ -5,7 +5,9 @@ import io.mockk.mockk
 import net.runelite.api.GrandExchangeOffer
 import net.runelite.api.GrandExchangeOfferState
 import net.runelite.api.widgets.Widget
+import org.tribot.api.ApiContext
 import org.tribot.api.testing.fakeContext
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -13,6 +15,11 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class GrandExchangeTest {
+
+    @AfterTest
+    fun tearDown() {
+        ApiContext.reset()
+    }
 
     private fun fakeOffer(
         state: GrandExchangeOfferState = GrandExchangeOfferState.EMPTY,
@@ -46,11 +53,11 @@ class GrandExchangeTest {
             fakeOffer(state = GrandExchangeOfferState.BUYING, itemId = 995, totalQuantity = 100, price = 5),
             fakeOffer(state = GrandExchangeOfferState.SELLING, itemId = 453, totalQuantity = 50, price = 10)
         )
-        val ctx = fakeContext {
+        ApiContext.init(fakeContext {
             every { client.grandExchangeOffers } returns offers
-        }
+        })
 
-        val result = GrandExchange.getOffers(ctx)
+        val result = GrandExchange.getOffers()
         assertEquals(8, result.size)
         assertEquals(GrandExchangeOfferState.BUYING, result[0].state)
         assertEquals(995, result[0].itemId)
@@ -70,11 +77,11 @@ class GrandExchangeTest {
             fakeOffer(state = GrandExchangeOfferState.BUYING, itemId = 995),
             fakeOffer(state = GrandExchangeOfferState.SELLING, itemId = 453)
         )
-        val ctx = fakeContext {
+        ApiContext.init(fakeContext {
             every { client.grandExchangeOffers } returns offers
-        }
+        })
 
-        val index = GrandExchange.getEmptySlotIndex(ctx)
+        val index = GrandExchange.getEmptySlotIndex()
         assertEquals(2, index)
     }
 
@@ -83,11 +90,11 @@ class GrandExchangeTest {
         val offers = Array(8) {
             fakeOffer(state = GrandExchangeOfferState.BUYING, itemId = it + 1)
         }
-        val ctx = fakeContext {
+        ApiContext.init(fakeContext {
             every { client.grandExchangeOffers } returns offers
-        }
+        })
 
-        val index = GrandExchange.getEmptySlotIndex(ctx)
+        val index = GrandExchange.getEmptySlotIndex()
         assertNull(index)
     }
 
@@ -99,11 +106,11 @@ class GrandExchangeTest {
             fakeOffer(state = GrandExchangeOfferState.SOLD, itemId = 556),
             fakeOffer(state = GrandExchangeOfferState.CANCELLED_BUY, itemId = 100)
         )
-        val ctx = fakeContext {
+        ApiContext.init(fakeContext {
             every { client.grandExchangeOffers } returns offers
-        }
+        })
 
-        val completed = GrandExchange.getCompletedOffers(ctx)
+        val completed = GrandExchange.getCompletedOffers()
         assertEquals(2, completed.size)
         assertTrue(completed.all { it.isComplete })
         assertEquals(995, completed[0].itemId)
@@ -118,11 +125,11 @@ class GrandExchangeTest {
             fakeOffer(state = GrandExchangeOfferState.SELLING, itemId = 556),
             fakeOffer(state = GrandExchangeOfferState.SOLD, itemId = 100)
         )
-        val ctx = fakeContext {
+        ApiContext.init(fakeContext {
             every { client.grandExchangeOffers } returns offers
-        }
+        })
 
-        val active = GrandExchange.getActiveOffers(ctx)
+        val active = GrandExchange.getActiveOffers()
         assertEquals(2, active.size)
         assertTrue(active.all { it.isBuying || it.isSelling })
         assertEquals(453, active[0].itemId)
@@ -133,27 +140,28 @@ class GrandExchangeTest {
     fun `isOpen returns true when GE widget visible`() {
         val widget = mockk<Widget>(relaxed = true)
         every { widget.isHidden } returns false
-        val ctx = fakeContext {
+        ApiContext.init(fakeContext {
             every { client.getWidget(465, 0) } returns widget
-        }
+        })
 
-        assertTrue(GrandExchange.isOpen(ctx))
+        assertTrue(GrandExchange.isOpen())
     }
 
     @Test
     fun `isOpen returns false when widget null or hidden`() {
         // null widget case
-        val ctx1 = fakeContext {
+        ApiContext.init(fakeContext {
             every { client.getWidget(465, 0) } returns null
-        }
-        assertFalse(GrandExchange.isOpen(ctx1))
+        })
+        assertFalse(GrandExchange.isOpen())
 
         // hidden widget case
+        ApiContext.reset()
         val hiddenWidget = mockk<Widget>(relaxed = true)
         every { hiddenWidget.isHidden } returns true
-        val ctx2 = fakeContext {
+        ApiContext.init(fakeContext {
             every { client.getWidget(465, 0) } returns hiddenWidget
-        }
-        assertFalse(GrandExchange.isOpen(ctx2))
+        })
+        assertFalse(GrandExchange.isOpen())
     }
 }

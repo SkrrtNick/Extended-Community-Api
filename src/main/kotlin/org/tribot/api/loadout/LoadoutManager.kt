@@ -3,7 +3,7 @@ package org.tribot.api.loadout
 import org.tribot.api.query.NpcQueryBuilder
 import org.tribot.api.query.ObjectQueryBuilder
 import org.tribot.api.waiting.Conditions
-import org.tribot.automation.script.ScriptContext
+import org.tribot.api.ApiContext
 import org.tribot.automation.script.core.tabs.InventoryItem
 
 /**
@@ -14,17 +14,17 @@ object LoadoutManager {
     /**
      * Checks if the current inventory and equipment satisfy the loadout.
      */
-    fun isSatisfied(ctx: ScriptContext, loadout: Loadout): Boolean {
-        return getMissingItems(ctx, loadout).isEmpty()
-                && getMissingEquipment(ctx, loadout).isEmpty()
+    fun isSatisfied(loadout: Loadout): Boolean {
+        return getMissingItems(loadout).isEmpty()
+                && getMissingEquipment(loadout).isEmpty()
     }
 
     /**
      * Returns inventory items needed but missing or with insufficient quantity.
      * Each returned [LoadoutItem] has [LoadoutItem.quantity] set to the deficit.
      */
-    fun getMissingItems(ctx: ScriptContext, loadout: Loadout): List<LoadoutItem> {
-        val inventoryItems = ctx.inventory.getItems()
+    fun getMissingItems(loadout: Loadout): List<LoadoutItem> {
+        val inventoryItems = ApiContext.get().inventory.getItems()
         return loadout.inventory.mapNotNull { needed ->
             val have = inventoryItems
                 .filter { it.id in needed.allIds }
@@ -37,17 +37,17 @@ object LoadoutManager {
     /**
      * Returns inventory items that are NOT part of the loadout.
      */
-    fun getUnwantedItems(ctx: ScriptContext, loadout: Loadout): List<InventoryItem> {
+    fun getUnwantedItems(loadout: Loadout): List<InventoryItem> {
         val wantedIds = loadout.inventory.flatMap { it.allIds }.toSet()
-        return ctx.inventory.getItems().filter { it.id !in wantedIds }
+        return ApiContext.get().inventory.getItems().filter { it.id !in wantedIds }
     }
 
     /**
      * Returns equipment items that are not currently worn.
      * Checks by matching any of the item's IDs against equipped items.
      */
-    fun getMissingEquipment(ctx: ScriptContext, loadout: Loadout): List<LoadoutItem> {
-        val equippedItems = ctx.equipment.getItems()
+    fun getMissingEquipment(loadout: Loadout): List<LoadoutItem> {
+        val equippedItems = ApiContext.get().equipment.getItems()
         return loadout.equipment.filter { needed ->
             equippedItems.none { it.id in needed.allIds }
         }
@@ -58,15 +58,16 @@ object LoadoutManager {
      *
      * @return true if the loadout is fully satisfied after the operation
      */
-    fun fulfill(ctx: ScriptContext, loadout: Loadout): Boolean {
+    fun fulfill(loadout: Loadout): Boolean {
+        val ctx = ApiContext.get()
         // Already good — nothing to do
-        if (isSatisfied(ctx, loadout)) return true
+        if (isSatisfied(loadout)) return true
 
         // Open the nearest bank
-        if (!openBank(ctx)) return false
+        if (!openBank()) return false
 
         // Deposit unwanted items
-        val unwanted = getUnwantedItems(ctx, loadout)
+        val unwanted = getUnwantedItems(loadout)
         for (item in unwanted) {
             ctx.banking.depositAll(item.id)
             Conditions.waitUntil(ctx.waiting, 1200) {
@@ -75,9 +76,9 @@ object LoadoutManager {
         }
 
         // Withdraw missing items
-        val missing = getMissingItems(ctx, loadout)
+        val missing = getMissingItems(loadout)
         for (item in missing) {
-            val withdrawn = withdrawItem(ctx, item)
+            val withdrawn = withdrawItem(item)
             if (!withdrawn) return false
         }
 
@@ -88,21 +89,22 @@ object LoadoutManager {
         }
 
         // Equip items that need equipping
-        val missingEquip = getMissingEquipment(ctx, loadout)
+        val missingEquip = getMissingEquipment(loadout)
         for (item in missingEquip) {
-            equipItem(ctx, item)
+            equipItem(item)
         }
 
-        return isSatisfied(ctx, loadout)
+        return isSatisfied(loadout)
     }
 
-    private fun openBank(ctx: ScriptContext): Boolean {
+    private fun openBank(): Boolean {
+        val ctx = ApiContext.get()
         if (ctx.banking.isOpen()) return true
 
         val playerLocation = ctx.worldViews.getLocalPlayer()?.worldLocation ?: return false
 
         // Try object with "Bank" action first
-        val bankObject = ObjectQueryBuilder(ctx)
+        val bankObject = ObjectQueryBuilder()
             .actions("Bank")
             .withinDistance(20)
             .results()
@@ -116,7 +118,7 @@ object LoadoutManager {
         }
 
         // Try NPC with "Bank" action
-        val bankNpc = NpcQueryBuilder(ctx)
+        val bankNpc = NpcQueryBuilder()
             .actions("Bank")
             .withinDistance(20)
             .results()
@@ -132,7 +134,8 @@ object LoadoutManager {
         return false
     }
 
-    private fun withdrawItem(ctx: ScriptContext, item: LoadoutItem): Boolean {
+    private fun withdrawItem(item: LoadoutItem): Boolean {
+        val ctx = ApiContext.get()
         // Try primary ID first
         if (ctx.banking.contains(item.itemId)) {
             ctx.banking.withdraw(item.itemId, item.quantity)
@@ -154,10 +157,11 @@ object LoadoutManager {
         return false
     }
 
-    private fun equipItem(ctx: ScriptContext, item: LoadoutItem) {
+    private fun equipItem(item: LoadoutItem) {
+        val ctx = ApiContext.get()
         val actions = listOf("Wield", "Wear", "Equip")
         for (action in actions) {
-            val itemId = findInventoryId(ctx, item) ?: return
+            val itemId = findInventoryId(item) ?: return
             if (ctx.inventory.clickItem(itemId, action)) {
                 Conditions.waitUntil(ctx.waiting, 1200) {
                     ctx.equipment.isEquipped(itemId)
@@ -167,8 +171,8 @@ object LoadoutManager {
         }
     }
 
-    private fun findInventoryId(ctx: ScriptContext, item: LoadoutItem): Int? {
-        val inventoryItems = ctx.inventory.getItems()
+    private fun findInventoryId(item: LoadoutItem): Int? {
+        val inventoryItems = ApiContext.get().inventory.getItems()
         return item.allIds.firstOrNull { id -> inventoryItems.any { it.id == id } }
     }
 }

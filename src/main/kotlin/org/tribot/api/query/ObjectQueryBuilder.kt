@@ -1,15 +1,15 @@
 package org.tribot.api.query
 
 import net.runelite.api.TileObject
-import org.tribot.automation.script.ScriptContext
+import org.tribot.api.ApiContext
 
 /**
  * Fluent query builder for game objects (TileObjects) in the world.
  */
-class ObjectQueryBuilder(private val ctx: ScriptContext) : QueryBuilder<TileObject, ObjectQueryBuilder>() {
+class ObjectQueryBuilder : QueryBuilder<TileObject, ObjectQueryBuilder>() {
 
     fun names(vararg names: String): ObjectQueryBuilder = filter { obj ->
-        val def = ctx.definitions.getObject(obj.id)
+        val def = ApiContext.get().definitions.getObject(obj.id)
         def != null && def.name in names
     }
 
@@ -18,12 +18,12 @@ class ObjectQueryBuilder(private val ctx: ScriptContext) : QueryBuilder<TileObje
     }
 
     fun actions(vararg actions: String): ObjectQueryBuilder = filter { obj ->
-        val def = ctx.definitions.getObject(obj.id)
+        val def = ApiContext.get().definitions.getObject(obj.id)
         def != null && def.actions.filterNotNull().any { it in actions.toSet() }
     }
 
     fun withinDistance(maxDistance: Int): ObjectQueryBuilder = filter { obj ->
-        val playerLocation = ctx.worldViews.getLocalPlayer()?.worldLocation ?: return@filter false
+        val playerLocation = ApiContext.get().worldViews.getLocalPlayer()?.worldLocation ?: return@filter false
         obj.worldLocation.distanceTo(playerLocation) <= maxDistance
     }
 
@@ -33,5 +33,5 @@ class ObjectQueryBuilder(private val ctx: ScriptContext) : QueryBuilder<TileObje
     }
 
     override fun fetchEntities(): List<TileObject> =
-        ctx.worldViews.getTopLevelObjects()
+        ApiContext.get().worldViews.getTopLevelObjects()
 }

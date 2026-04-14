@@ -3,22 +3,30 @@ package org.tribot.api.query
 import io.mockk.every
 import org.tribot.automation.script.core.tabs.EquipmentSlot
 import org.tribot.automation.script.core.tabs.EquippedItem
+import org.tribot.api.ApiContext
 import org.tribot.api.testing.*
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class EquipmentQueryBuilderTest {
 
+    @AfterTest
+    fun tearDown() {
+        ApiContext.reset()
+    }
+
     private fun buildContext(
         items: List<EquippedItem> = emptyList(),
         itemDefs: Map<Int, org.tribot.automation.script.core.definition.ItemDefinition> = emptyMap()
-    ): org.tribot.automation.script.ScriptContext {
-        return fakeContext {
+    ) {
+        val ctx = fakeContext {
             every { equipment.getItems() } returns items
             for ((id, def) in itemDefs) {
                 every { definitions.getItem(id) } returns def
             }
         }
+        ApiContext.init(ctx)
     }
 
     @Test
@@ -27,9 +35,9 @@ class EquipmentQueryBuilderTest {
             EquippedItem(4151, 1, EquipmentSlot.WEAPON),
             EquippedItem(1127, 1, EquipmentSlot.BODY)
         )
-        val ctx = buildContext(items = items)
+        buildContext(items = items)
 
-        val results = EquipmentQueryBuilder(ctx).results()
+        val results = EquipmentQueryBuilder().results()
         assertEquals(2, results.size)
     }
 
@@ -39,12 +47,12 @@ class EquipmentQueryBuilderTest {
             EquippedItem(4151, 1, EquipmentSlot.WEAPON),
             EquippedItem(1127, 1, EquipmentSlot.BODY)
         )
-        val ctx = buildContext(items = items, itemDefs = mapOf(
+        buildContext(items = items, itemDefs = mapOf(
             4151 to fakeItemDef(id = 4151, name = "Abyssal whip"),
             1127 to fakeItemDef(id = 1127, name = "Rune platebody")
         ))
 
-        val results = EquipmentQueryBuilder(ctx).names("Abyssal whip").results()
+        val results = EquipmentQueryBuilder().names("Abyssal whip").results()
         assertEquals(1, results.size)
         assertEquals(4151, results.first()?.id)
     }
@@ -55,9 +63,9 @@ class EquipmentQueryBuilderTest {
             EquippedItem(4151, 1, EquipmentSlot.WEAPON),
             EquippedItem(1127, 1, EquipmentSlot.BODY)
         )
-        val ctx = buildContext(items = items)
+        buildContext(items = items)
 
-        val results = EquipmentQueryBuilder(ctx).ids(1127).results()
+        val results = EquipmentQueryBuilder().ids(1127).results()
         assertEquals(1, results.size)
         assertEquals(1127, results.first()?.id)
     }
@@ -69,9 +77,9 @@ class EquipmentQueryBuilderTest {
             EquippedItem(1127, 1, EquipmentSlot.BODY),
             EquippedItem(1079, 1, EquipmentSlot.LEGS)
         )
-        val ctx = buildContext(items = items)
+        buildContext(items = items)
 
-        val results = EquipmentQueryBuilder(ctx).slots(EquipmentSlot.WEAPON, EquipmentSlot.BODY).results()
+        val results = EquipmentQueryBuilder().slots(EquipmentSlot.WEAPON, EquipmentSlot.BODY).results()
         assertEquals(2, results.size)
     }
 
@@ -81,12 +89,12 @@ class EquipmentQueryBuilderTest {
             EquippedItem(4151, 1, EquipmentSlot.WEAPON),
             EquippedItem(2550, 1, EquipmentSlot.RING)
         )
-        val ctx = buildContext(items = items, itemDefs = mapOf(
+        buildContext(items = items, itemDefs = mapOf(
             4151 to fakeItemDef(id = 4151, name = "Abyssal whip", inventoryActions = listOf("Wield", null, null, "Drop", null)),
             2550 to fakeItemDef(id = 2550, name = "Ring of dueling(8)", inventoryActions = listOf("Wear", "Rub", null, "Drop", null))
         ))
 
-        val results = EquipmentQueryBuilder(ctx).actions("Rub").results()
+        val results = EquipmentQueryBuilder().actions("Rub").results()
         assertEquals(1, results.size)
         assertEquals(2550, results.first()?.id)
     }
@@ -97,9 +105,9 @@ class EquipmentQueryBuilderTest {
             EquippedItem(892, 500, EquipmentSlot.ARROW),
             EquippedItem(4151, 1, EquipmentSlot.WEAPON)
         )
-        val ctx = buildContext(items = items)
+        buildContext(items = items)
 
-        val results = EquipmentQueryBuilder(ctx).minQuantity(100).results()
+        val results = EquipmentQueryBuilder().minQuantity(100).results()
         assertEquals(1, results.size)
         assertEquals(892, results.first()?.id)
     }
@@ -110,9 +118,9 @@ class EquipmentQueryBuilderTest {
             EquippedItem(892, 500, EquipmentSlot.ARROW),
             EquippedItem(4151, 1, EquipmentSlot.WEAPON)
         )
-        val ctx = buildContext(items = items)
+        buildContext(items = items)
 
-        val results = EquipmentQueryBuilder(ctx).maxQuantity(10).results()
+        val results = EquipmentQueryBuilder().maxQuantity(10).results()
         assertEquals(1, results.size)
         assertEquals(4151, results.first()?.id)
     }
@@ -124,13 +132,13 @@ class EquipmentQueryBuilderTest {
             EquippedItem(1127, 1, EquipmentSlot.BODY),
             EquippedItem(892, 500, EquipmentSlot.ARROW)
         )
-        val ctx = buildContext(items = items, itemDefs = mapOf(
+        buildContext(items = items, itemDefs = mapOf(
             4151 to fakeItemDef(id = 4151, name = "Abyssal whip"),
             1127 to fakeItemDef(id = 1127, name = "Rune platebody"),
             892 to fakeItemDef(id = 892, name = "Rune arrow")
         ))
 
-        val results = EquipmentQueryBuilder(ctx)
+        val results = EquipmentQueryBuilder()
             .slots(EquipmentSlot.WEAPON, EquipmentSlot.ARROW)
             .minQuantity(100)
             .results()

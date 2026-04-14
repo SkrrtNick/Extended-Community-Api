@@ -4,12 +4,19 @@ import io.mockk.every
 import io.mockk.mockk
 import org.tribot.automation.script.core.world.World
 import org.tribot.automation.script.core.world.WorldRegion
+import org.tribot.api.ApiContext
 import org.tribot.api.testing.*
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class WorldQueryBuilderTest {
+
+    @AfterTest
+    fun tearDown() {
+        ApiContext.reset()
+    }
 
     private fun fakeWorld(
         number: Int = 301,
@@ -46,11 +53,12 @@ class WorldQueryBuilderTest {
     private fun buildContext(
         worlds: List<World> = emptyList(),
         currentWorld: Int = 301
-    ): org.tribot.automation.script.ScriptContext {
-        return fakeContext {
+    ) {
+        val ctx = fakeContext {
             every { worldCache.getAll() } returns worlds
             every { client.world } returns currentWorld
         }
+        ApiContext.init(ctx)
     }
 
     @Test
@@ -60,9 +68,9 @@ class WorldQueryBuilderTest {
             fakeWorld(number = 302),
             fakeWorld(number = 303)
         )
-        val ctx = buildContext(worlds = worlds)
+        buildContext(worlds = worlds)
 
-        val results = WorldQueryBuilder(ctx).results()
+        val results = WorldQueryBuilder().results()
         assertEquals(3, results.size)
     }
 
@@ -73,9 +81,9 @@ class WorldQueryBuilderTest {
             fakeWorld(number = 308, isMembers = false),
             fakeWorld(number = 310, isMembers = true)
         )
-        val ctx = buildContext(worlds = worlds)
+        buildContext(worlds = worlds)
 
-        val results = WorldQueryBuilder(ctx).members().results()
+        val results = WorldQueryBuilder().members().results()
         assertEquals(2, results.size)
         assertTrue(results.asList().all { it.isMembers })
     }
@@ -86,9 +94,9 @@ class WorldQueryBuilderTest {
             fakeWorld(number = 301, isMembers = true),
             fakeWorld(number = 308, isMembers = false)
         )
-        val ctx = buildContext(worlds = worlds)
+        buildContext(worlds = worlds)
 
-        val results = WorldQueryBuilder(ctx).free().results()
+        val results = WorldQueryBuilder().free().results()
         assertEquals(1, results.size)
         assertEquals(308, results.first()?.number)
     }
@@ -99,9 +107,9 @@ class WorldQueryBuilderTest {
             fakeWorld(number = 301, isPvp = false),
             fakeWorld(number = 325, isPvp = true)
         )
-        val ctx = buildContext(worlds = worlds)
+        buildContext(worlds = worlds)
 
-        val results = WorldQueryBuilder(ctx).pvp().results()
+        val results = WorldQueryBuilder().pvp().results()
         assertEquals(1, results.size)
         assertEquals(325, results.first()?.number)
     }
@@ -112,9 +120,9 @@ class WorldQueryBuilderTest {
             fakeWorld(number = 301, isPvp = false),
             fakeWorld(number = 325, isPvp = true)
         )
-        val ctx = buildContext(worlds = worlds)
+        buildContext(worlds = worlds)
 
-        val results = WorldQueryBuilder(ctx).notPvp().results()
+        val results = WorldQueryBuilder().notPvp().results()
         assertEquals(1, results.size)
         assertEquals(301, results.first()?.number)
     }
@@ -131,9 +139,9 @@ class WorldQueryBuilderTest {
             fakeWorld(number = 520, isSpeedRunning = true),
             fakeWorld(number = 530, isGridMaster = true)
         )
-        val ctx = buildContext(worlds = worlds)
+        buildContext(worlds = worlds)
 
-        val results = WorldQueryBuilder(ctx).safe().results()
+        val results = WorldQueryBuilder().safe().results()
         assertEquals(1, results.size)
         assertEquals(301, results.first()?.number)
     }
@@ -145,9 +153,9 @@ class WorldQueryBuilderTest {
             fakeWorld(number = 302, population = 800),
             fakeWorld(number = 303, population = 500)
         )
-        val ctx = buildContext(worlds = worlds)
+        buildContext(worlds = worlds)
 
-        val results = WorldQueryBuilder(ctx).maxPopulation(500).results()
+        val results = WorldQueryBuilder().maxPopulation(500).results()
         assertEquals(2, results.size)
     }
 
@@ -158,9 +166,9 @@ class WorldQueryBuilderTest {
             fakeWorld(number = 302, population = 800),
             fakeWorld(number = 303, population = 500)
         )
-        val ctx = buildContext(worlds = worlds)
+        buildContext(worlds = worlds)
 
-        val results = WorldQueryBuilder(ctx).minPopulation(500).results()
+        val results = WorldQueryBuilder().minPopulation(500).results()
         assertEquals(2, results.size)
     }
 
@@ -171,9 +179,9 @@ class WorldQueryBuilderTest {
             fakeWorld(number = 302, region = WorldRegion.UNITED_KINGDOM),
             fakeWorld(number = 303, region = WorldRegion.AUSTRALIA)
         )
-        val ctx = buildContext(worlds = worlds)
+        buildContext(worlds = worlds)
 
-        val results = WorldQueryBuilder(ctx).region(WorldRegion.UNITED_STATES_OF_AMERICA, WorldRegion.UNITED_KINGDOM).results()
+        val results = WorldQueryBuilder().region(WorldRegion.UNITED_STATES_OF_AMERICA, WorldRegion.UNITED_KINGDOM).results()
         assertEquals(2, results.size)
     }
 
@@ -184,9 +192,9 @@ class WorldQueryBuilderTest {
             fakeWorld(number = 302),
             fakeWorld(number = 303)
         )
-        val ctx = buildContext(worlds = worlds)
+        buildContext(worlds = worlds)
 
-        val results = WorldQueryBuilder(ctx).numbers(301, 303).results()
+        val results = WorldQueryBuilder().numbers(301, 303).results()
         assertEquals(2, results.size)
     }
 
@@ -197,9 +205,9 @@ class WorldQueryBuilderTest {
             fakeWorld(number = 302),
             fakeWorld(number = 303)
         )
-        val ctx = buildContext(worlds = worlds, currentWorld = 302)
+        buildContext(worlds = worlds, currentWorld = 302)
 
-        val results = WorldQueryBuilder(ctx).notCurrent().results()
+        val results = WorldQueryBuilder().notCurrent().results()
         assertEquals(2, results.size)
         assertTrue(results.asList().none { it.number == 302 })
     }
@@ -211,9 +219,9 @@ class WorldQueryBuilderTest {
             fakeWorld(number = 302, activity = null),
             fakeWorld(number = 303, activity = "PvP Arena")
         )
-        val ctx = buildContext(worlds = worlds)
+        buildContext(worlds = worlds)
 
-        val results = WorldQueryBuilder(ctx).activityContains("trade").results()
+        val results = WorldQueryBuilder().activityContains("trade").results()
         assertEquals(1, results.size)
         assertEquals(301, results.first()?.number)
     }
@@ -224,9 +232,9 @@ class WorldQueryBuilderTest {
             fakeWorld(number = 301, isDeadman = false),
             fakeWorld(number = 345, isDeadman = true)
         )
-        val ctx = buildContext(worlds = worlds)
+        buildContext(worlds = worlds)
 
-        val results = WorldQueryBuilder(ctx).notDeadman().results()
+        val results = WorldQueryBuilder().notDeadman().results()
         assertEquals(1, results.size)
         assertEquals(301, results.first()?.number)
     }
@@ -237,9 +245,9 @@ class WorldQueryBuilderTest {
             fakeWorld(number = 301, isSkillTotalWorld = false),
             fakeWorld(number = 500, isSkillTotalWorld = true)
         )
-        val ctx = buildContext(worlds = worlds)
+        buildContext(worlds = worlds)
 
-        val results = WorldQueryBuilder(ctx).notSkillTotal().results()
+        val results = WorldQueryBuilder().notSkillTotal().results()
         assertEquals(1, results.size)
         assertEquals(301, results.first()?.number)
     }
@@ -250,9 +258,9 @@ class WorldQueryBuilderTest {
             fakeWorld(number = 301, isSeasonal = false),
             fakeWorld(number = 510, isSeasonal = true)
         )
-        val ctx = buildContext(worlds = worlds)
+        buildContext(worlds = worlds)
 
-        val results = WorldQueryBuilder(ctx).notSeasonal().results()
+        val results = WorldQueryBuilder().notSeasonal().results()
         assertEquals(1, results.size)
         assertEquals(301, results.first()?.number)
     }
@@ -263,9 +271,9 @@ class WorldQueryBuilderTest {
             fakeWorld(number = 301, isFreshStartWorld = false),
             fakeWorld(number = 401, isFreshStartWorld = true)
         )
-        val ctx = buildContext(worlds = worlds)
+        buildContext(worlds = worlds)
 
-        val results = WorldQueryBuilder(ctx).notFreshStart().results()
+        val results = WorldQueryBuilder().notFreshStart().results()
         assertEquals(1, results.size)
         assertEquals(301, results.first()?.number)
     }
@@ -278,9 +286,9 @@ class WorldQueryBuilderTest {
             fakeWorld(number = 303, isMembers = false, population = 200, region = WorldRegion.UNITED_KINGDOM),
             fakeWorld(number = 304, isMembers = true, population = 200, region = WorldRegion.UNITED_KINGDOM)
         )
-        val ctx = buildContext(worlds = worlds, currentWorld = 304)
+        buildContext(worlds = worlds, currentWorld = 304)
 
-        val results = WorldQueryBuilder(ctx)
+        val results = WorldQueryBuilder()
             .members()
             .maxPopulation(500)
             .region(WorldRegion.UNITED_STATES_OF_AMERICA)

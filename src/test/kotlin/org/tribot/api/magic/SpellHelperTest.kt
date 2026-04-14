@@ -1,5 +1,6 @@
 package org.tribot.api.magic
 
+import org.tribot.api.ApiContext
 import org.tribot.automation.script.core.tabs.EquipmentSlot
 import org.tribot.automation.script.core.tabs.EquippedItem
 import kotlin.test.*
@@ -20,33 +21,38 @@ class SpellHelperTest {
         fakeMagic = FakeMagic()
     }
 
+    @AfterTest
+    fun tearDown() {
+        ApiContext.reset()
+    }
+
     // -------------------------------------------------------------------
     // cast()
     // -------------------------------------------------------------------
 
     @Test
     fun `cast delegates to SDK magic cast with correct spell name`() {
-        val ctx = fakeContext(fakeSkills, fakeInventory, fakeMagic)
-        SpellHelper.cast(ctx, Spell.HIGH_LEVEL_ALCHEMY)
+        ApiContext.init(fakeContext(fakeSkills, fakeInventory, fakeMagic))
+        SpellHelper.cast(Spell.HIGH_LEVEL_ALCHEMY)
         assertEquals("High Level Alchemy", fakeMagic.lastCast)
     }
 
     @Test
     fun `cast returns true when SDK returns true`() {
         fakeMagic.castResult = true
-        val ctx = fakeContext(fakeSkills, fakeInventory, fakeMagic)
-        assertTrue(SpellHelper.cast(ctx, Spell.WIND_STRIKE))
+        ApiContext.init(fakeContext(fakeSkills, fakeInventory, fakeMagic))
+        assertTrue(SpellHelper.cast(Spell.WIND_STRIKE))
     }
 
     @Test
     fun `cast returns false when SDK returns false`() {
         fakeMagic.castResult = false
-        val ctx = fakeContext(fakeSkills, fakeInventory, fakeMagic)
-        assertFalse(SpellHelper.cast(ctx, Spell.WIND_STRIKE))
+        ApiContext.init(fakeContext(fakeSkills, fakeInventory, fakeMagic))
+        assertFalse(SpellHelper.cast(Spell.WIND_STRIKE))
     }
 
     // -------------------------------------------------------------------
-    // canCast() — basic level and rune checks
+    // canCast() -- basic level and rune checks
     // -------------------------------------------------------------------
 
     @Test
@@ -54,16 +60,16 @@ class SpellHelperTest {
         fakeSkills.magicLevel = 54  // High Alch needs 55
         fakeInventory.setCount(RuneType.FIRE.itemId, 5)
         fakeInventory.setCount(RuneType.NATURE.itemId, 1)
-        val ctx = fakeContext(fakeSkills, fakeInventory, fakeMagic)
-        assertFalse(SpellHelper.canCast(ctx, Spell.HIGH_LEVEL_ALCHEMY))
+        ApiContext.init(fakeContext(fakeSkills, fakeInventory, fakeMagic))
+        assertFalse(SpellHelper.canCast(Spell.HIGH_LEVEL_ALCHEMY))
     }
 
     @Test
     fun `canCast returns false when missing runes`() {
         fakeSkills.magicLevel = 99
         fakeInventory.setCount(RuneType.FIRE.itemId, 5)
-        val ctx = fakeContext(fakeSkills, fakeInventory, fakeMagic)
-        assertFalse(SpellHelper.canCast(ctx, Spell.HIGH_LEVEL_ALCHEMY))
+        ApiContext.init(fakeContext(fakeSkills, fakeInventory, fakeMagic))
+        assertFalse(SpellHelper.canCast(Spell.HIGH_LEVEL_ALCHEMY))
     }
 
     @Test
@@ -71,8 +77,8 @@ class SpellHelperTest {
         fakeSkills.magicLevel = 99
         fakeInventory.setCount(RuneType.FIRE.itemId, 4)  // need 5
         fakeInventory.setCount(RuneType.NATURE.itemId, 1)
-        val ctx = fakeContext(fakeSkills, fakeInventory, fakeMagic)
-        assertFalse(SpellHelper.canCast(ctx, Spell.HIGH_LEVEL_ALCHEMY))
+        ApiContext.init(fakeContext(fakeSkills, fakeInventory, fakeMagic))
+        assertFalse(SpellHelper.canCast(Spell.HIGH_LEVEL_ALCHEMY))
     }
 
     @Test
@@ -80,8 +86,8 @@ class SpellHelperTest {
         fakeSkills.magicLevel = 55
         fakeInventory.setCount(RuneType.FIRE.itemId, 5)
         fakeInventory.setCount(RuneType.NATURE.itemId, 1)
-        val ctx = fakeContext(fakeSkills, fakeInventory, fakeMagic)
-        assertTrue(SpellHelper.canCast(ctx, Spell.HIGH_LEVEL_ALCHEMY))
+        ApiContext.init(fakeContext(fakeSkills, fakeInventory, fakeMagic))
+        assertTrue(SpellHelper.canCast(Spell.HIGH_LEVEL_ALCHEMY))
     }
 
     @Test
@@ -89,8 +95,8 @@ class SpellHelperTest {
         fakeSkills.magicLevel = 99
         fakeInventory.setCount(RuneType.FIRE.itemId, 100)
         fakeInventory.setCount(RuneType.NATURE.itemId, 500)
-        val ctx = fakeContext(fakeSkills, fakeInventory, fakeMagic)
-        assertTrue(SpellHelper.canCast(ctx, Spell.HIGH_LEVEL_ALCHEMY))
+        ApiContext.init(fakeContext(fakeSkills, fakeInventory, fakeMagic))
+        assertTrue(SpellHelper.canCast(Spell.HIGH_LEVEL_ALCHEMY))
     }
 
     @Test
@@ -101,8 +107,8 @@ class SpellHelperTest {
         fakeInventory.setCount(RuneType.DEATH.itemId, 4)
         val fakeClient = FakeClient()
         fakeClient.setFakeVarbit(4070, 1) // Ancient spellbook
-        val ctx = fakeContext(fakeSkills, fakeInventory, fakeMagic, client = fakeClient)
-        assertTrue(SpellHelper.canCast(ctx, Spell.ICE_BARRAGE))
+        ApiContext.init(fakeContext(fakeSkills, fakeInventory, fakeMagic, client = fakeClient))
+        assertTrue(SpellHelper.canCast(Spell.ICE_BARRAGE))
     }
 
     @Test
@@ -110,12 +116,12 @@ class SpellHelperTest {
         fakeSkills.magicLevel = 1
         fakeInventory.setCount(RuneType.AIR.itemId, 1)
         fakeInventory.setCount(RuneType.MIND.itemId, 1)
-        val ctx = fakeContext(fakeSkills, fakeInventory, fakeMagic)
-        assertTrue(SpellHelper.canCast(ctx, Spell.WIND_STRIKE))
+        ApiContext.init(fakeContext(fakeSkills, fakeInventory, fakeMagic))
+        assertTrue(SpellHelper.canCast(Spell.WIND_STRIKE))
     }
 
     // -------------------------------------------------------------------
-    // canCast() — spellbook check
+    // canCast() -- spellbook check
     // -------------------------------------------------------------------
 
     @Test
@@ -125,8 +131,8 @@ class SpellHelperTest {
         fakeInventory.setCount(RuneType.BLOOD.itemId, 2)
         fakeInventory.setCount(RuneType.DEATH.itemId, 4)
         // Default varbit is 0 = Standard, but Ice Barrage is Ancient
-        val ctx = fakeContext(fakeSkills, fakeInventory, fakeMagic)
-        assertFalse(SpellHelper.canCast(ctx, Spell.ICE_BARRAGE))
+        ApiContext.init(fakeContext(fakeSkills, fakeInventory, fakeMagic))
+        assertFalse(SpellHelper.canCast(Spell.ICE_BARRAGE))
     }
 
     @Test
@@ -137,12 +143,12 @@ class SpellHelperTest {
         fakeInventory.setCount(RuneType.DEATH.itemId, 4)
         val fakeClient = FakeClient()
         fakeClient.setFakeVarbit(4070, 1) // Ancient
-        val ctx = fakeContext(fakeSkills, fakeInventory, fakeMagic, client = fakeClient)
-        assertTrue(SpellHelper.canCast(ctx, Spell.ICE_BARRAGE))
+        ApiContext.init(fakeContext(fakeSkills, fakeInventory, fakeMagic, client = fakeClient))
+        assertTrue(SpellHelper.canCast(Spell.ICE_BARRAGE))
     }
 
     // -------------------------------------------------------------------
-    // canCast() — staff support
+    // canCast() -- staff support
     // -------------------------------------------------------------------
 
     @Test
@@ -152,8 +158,8 @@ class SpellHelperTest {
         fakeInventory.setCount(RuneType.NATURE.itemId, 1)
         val fakeEquipment = FakeEquipment()
         fakeEquipment.equip(EquippedItem(1387, 1, EquipmentSlot.WEAPON)) // Staff of fire
-        val ctx = fakeContext(fakeSkills, fakeInventory, fakeMagic, fakeEquipment)
-        assertTrue(SpellHelper.canCast(ctx, Spell.HIGH_LEVEL_ALCHEMY))
+        ApiContext.init(fakeContext(fakeSkills, fakeInventory, fakeMagic, fakeEquipment))
+        assertTrue(SpellHelper.canCast(Spell.HIGH_LEVEL_ALCHEMY))
     }
 
     @Test
@@ -163,8 +169,8 @@ class SpellHelperTest {
         // Lava battlestaff provides earth + fire
         val fakeEquipment = FakeEquipment()
         fakeEquipment.equip(EquippedItem(3053, 1, EquipmentSlot.WEAPON)) // Lava battlestaff
-        val ctx = fakeContext(fakeSkills, fakeInventory, fakeMagic, fakeEquipment)
-        assertTrue(SpellHelper.canCast(ctx, Spell.HIGH_LEVEL_ALCHEMY))
+        ApiContext.init(fakeContext(fakeSkills, fakeInventory, fakeMagic, fakeEquipment))
+        assertTrue(SpellHelper.canCast(Spell.HIGH_LEVEL_ALCHEMY))
     }
 
     @Test
@@ -173,8 +179,8 @@ class SpellHelperTest {
         fakeInventory.setCount(RuneType.NATURE.itemId, 1)
         val fakeEquipment = FakeEquipment()
         fakeEquipment.equip(EquippedItem(20714, 1, EquipmentSlot.SHIELD)) // Tome of fire
-        val ctx = fakeContext(fakeSkills, fakeInventory, fakeMagic, fakeEquipment)
-        assertTrue(SpellHelper.canCast(ctx, Spell.HIGH_LEVEL_ALCHEMY))
+        ApiContext.init(fakeContext(fakeSkills, fakeInventory, fakeMagic, fakeEquipment))
+        assertTrue(SpellHelper.canCast(Spell.HIGH_LEVEL_ALCHEMY))
     }
 
     @Test
@@ -183,8 +189,8 @@ class SpellHelperTest {
         // High alch needs fire + nature. Staff of fire covers fire but not nature.
         val fakeEquipment = FakeEquipment()
         fakeEquipment.equip(EquippedItem(1387, 1, EquipmentSlot.WEAPON))
-        val ctx = fakeContext(fakeSkills, fakeInventory, fakeMagic, fakeEquipment)
-        assertFalse(SpellHelper.canCast(ctx, Spell.HIGH_LEVEL_ALCHEMY))
+        ApiContext.init(fakeContext(fakeSkills, fakeInventory, fakeMagic, fakeEquipment))
+        assertFalse(SpellHelper.canCast(Spell.HIGH_LEVEL_ALCHEMY))
     }
 
     @Test
@@ -193,8 +199,8 @@ class SpellHelperTest {
         // Wind Strike needs 1 air + 1 mind. Use smoke rune (4697) instead of air rune.
         fakeInventory.setCount(4697, 1) // smoke rune = air + fire
         fakeInventory.setCount(RuneType.MIND.itemId, 1)
-        val ctx = fakeContext(fakeSkills, fakeInventory, fakeMagic)
-        assertTrue(SpellHelper.canCast(ctx, Spell.WIND_STRIKE))
+        ApiContext.init(fakeContext(fakeSkills, fakeInventory, fakeMagic))
+        assertTrue(SpellHelper.canCast(Spell.WIND_STRIKE))
     }
 
     // -------------------------------------------------------------------
@@ -204,16 +210,16 @@ class SpellHelperTest {
     @Test
     fun `getAvailableSpells returns empty when level is 0`() {
         fakeSkills.magicLevel = 0
-        val ctx = fakeContext(fakeSkills, fakeInventory, fakeMagic)
-        val spells = SpellHelper.getAvailableSpells(ctx, Spellbook.STANDARD)
+        ApiContext.init(fakeContext(fakeSkills, fakeInventory, fakeMagic))
+        val spells = SpellHelper.getAvailableSpells(Spellbook.STANDARD)
         assertTrue(spells.isEmpty())
     }
 
     @Test
     fun `getAvailableSpells at level 1 includes Wind Strike only from combat`() {
         fakeSkills.magicLevel = 1
-        val ctx = fakeContext(fakeSkills, fakeInventory, fakeMagic)
-        val spells = SpellHelper.getAvailableSpells(ctx, Spellbook.STANDARD)
+        ApiContext.init(fakeContext(fakeSkills, fakeInventory, fakeMagic))
+        val spells = SpellHelper.getAvailableSpells(Spellbook.STANDARD)
         assertTrue(spells.contains(Spell.WIND_STRIKE))
         assertFalse(spells.contains(Spell.WATER_STRIKE)) // needs level 5
     }
@@ -221,8 +227,8 @@ class SpellHelperTest {
     @Test
     fun `getAvailableSpells only returns spells from the requested spellbook`() {
         fakeSkills.magicLevel = 99
-        val ctx = fakeContext(fakeSkills, fakeInventory, fakeMagic)
-        val ancientSpells = SpellHelper.getAvailableSpells(ctx, Spellbook.ANCIENT)
+        ApiContext.init(fakeContext(fakeSkills, fakeInventory, fakeMagic))
+        val ancientSpells = SpellHelper.getAvailableSpells(Spellbook.ANCIENT)
         ancientSpells.forEach { spell ->
             assertEquals(Spellbook.ANCIENT, spell.spellbook)
         }
@@ -231,8 +237,8 @@ class SpellHelperTest {
     @Test
     fun `getAvailableSpells at level 99 returns all standard spells except level 99+`() {
         fakeSkills.magicLevel = 99
-        val ctx = fakeContext(fakeSkills, fakeInventory, fakeMagic)
-        val spells = SpellHelper.getAvailableSpells(ctx, Spellbook.STANDARD)
+        ApiContext.init(fakeContext(fakeSkills, fakeInventory, fakeMagic))
+        val spells = SpellHelper.getAvailableSpells(Spellbook.STANDARD)
         assertTrue(spells.contains(Spell.FIRE_SURGE)) // level 95
         assertTrue(spells.contains(Spell.WIND_STRIKE)) // level 1
     }
@@ -248,10 +254,10 @@ class SpellHelperTest {
         fakeInventory.setCount(RuneType.AIR.itemId, 1)
         fakeInventory.setCount(RuneType.MIND.itemId, 1)
         // Standard spellbook (varbit 0 = default)
-        val ctx = fakeContext(fakeSkills, fakeInventory, fakeMagic)
-        val castable = SpellHelper.getCastableSpells(ctx, Spellbook.STANDARD)
+        ApiContext.init(fakeContext(fakeSkills, fakeInventory, fakeMagic))
+        val castable = SpellHelper.getCastableSpells(Spellbook.STANDARD)
         assertTrue(castable.contains(Spell.WIND_STRIKE))
-        // Should not contain Fire Strike (needs 2 air, 3 fire, 1 mind — we have 0 fire)
+        // Should not contain Fire Strike (needs 2 air, 3 fire, 1 mind -- we have 0 fire)
         assertFalse(castable.contains(Spell.FIRE_STRIKE))
     }
 }

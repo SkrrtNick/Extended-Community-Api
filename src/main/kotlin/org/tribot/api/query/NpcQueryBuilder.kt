@@ -1,15 +1,15 @@
 package org.tribot.api.query
 
 import net.runelite.api.NPC
-import org.tribot.automation.script.ScriptContext
+import org.tribot.api.ApiContext
 
 /**
  * Fluent query builder for NPCs in the game world.
  */
-class NpcQueryBuilder(private val ctx: ScriptContext) : QueryBuilder<NPC, NpcQueryBuilder>() {
+class NpcQueryBuilder : QueryBuilder<NPC, NpcQueryBuilder>() {
 
     fun names(vararg names: String): NpcQueryBuilder = filter { npc ->
-        val def = ctx.definitions.getNpc(npc.id)
+        val def = ApiContext.get().definitions.getNpc(npc.id)
         def != null && def.name in names
     }
 
@@ -18,12 +18,12 @@ class NpcQueryBuilder(private val ctx: ScriptContext) : QueryBuilder<NPC, NpcQue
     }
 
     fun actions(vararg actions: String): NpcQueryBuilder = filter { npc ->
-        val def = ctx.definitions.getNpc(npc.id)
+        val def = ApiContext.get().definitions.getNpc(npc.id)
         def != null && def.actions.filterNotNull().any { it in actions.toSet() }
     }
 
     fun withinDistance(maxDistance: Int): NpcQueryBuilder = filter { npc ->
-        val playerLocation = ctx.worldViews.getLocalPlayer()?.worldLocation ?: return@filter false
+        val playerLocation = ApiContext.get().worldViews.getLocalPlayer()?.worldLocation ?: return@filter false
         npc.worldLocation.distanceTo(playerLocation) <= maxDistance
     }
 
@@ -40,7 +40,7 @@ class NpcQueryBuilder(private val ctx: ScriptContext) : QueryBuilder<NPC, NpcQue
     }
 
     fun interactingWithMe(): NpcQueryBuilder = filter { npc ->
-        val localPlayer = ctx.worldViews.getLocalPlayer()
+        val localPlayer = ApiContext.get().worldViews.getLocalPlayer()
         localPlayer != null && npc.interacting == localPlayer
     }
 
@@ -54,5 +54,5 @@ class NpcQueryBuilder(private val ctx: ScriptContext) : QueryBuilder<NPC, NpcQue
     }
 
     override fun fetchEntities(): List<NPC> =
-        ctx.worldViews.getTopLevelNpcs()
+        ApiContext.get().worldViews.getTopLevelNpcs()
 }

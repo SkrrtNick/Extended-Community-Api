@@ -1,6 +1,6 @@
 package org.tribot.api.magic
 
-import org.tribot.automation.script.ScriptContext
+import org.tribot.api.ApiContext
 
 /**
  * The four spellbooks available in Old School RuneScape.
@@ -20,8 +20,8 @@ enum class Spellbook(val varbitValue: Int) {
         /**
          * Returns the player's currently active spellbook.
          */
-        fun getCurrent(ctx: ScriptContext): Spellbook {
-            val value = ctx.client.getVarbitValue(SPELLBOOK_VARBIT)
+        fun getCurrent(): Spellbook {
+            val value = ApiContext.get().client.getVarbitValue(SPELLBOOK_VARBIT)
             return entries.find { it.varbitValue == value } ?: STANDARD
         }
     }

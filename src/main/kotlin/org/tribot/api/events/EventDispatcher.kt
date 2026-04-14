@@ -1,6 +1,7 @@
 package org.tribot.api.events
 
 import net.runelite.api.*
+import org.tribot.api.ApiContext
 import org.tribot.automation.script.ScriptContext
 import org.tribot.automation.script.core.GroundItem
 import org.tribot.automation.script.core.tabs.EquippedItem
@@ -14,7 +15,7 @@ import org.tribot.automation.script.event.ListenerRegistration
  * Register callbacks before calling start.
  *
  * ```
- * val dispatcher = EventDispatcher(ctx)
+ * val dispatcher = EventDispatcher()
  * dispatcher.onStatChanged { skill, oldXp, newXp, _, _, _, _ -> println("Gained ${newXp - oldXp} xp") }
  * dispatcher.onNpcSpawned { npc -> println("${npc.name} appeared") }
  * dispatcher.onVarbitChanged(4070) { old, new -> println("Spellbook: $old -> $new") }
@@ -22,7 +23,9 @@ import org.tribot.automation.script.event.ListenerRegistration
  * dispatcher.start()
  * ```
  */
-class EventDispatcher(private val ctx: ScriptContext) {
+class EventDispatcher {
+
+    private val ctx: ScriptContext get() = ApiContext.get()
 
     private var tickRegistration: ListenerRegistration? = null
     private var renderRegistration: ListenerRegistration? = null

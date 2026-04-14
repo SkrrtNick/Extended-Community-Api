@@ -1,6 +1,6 @@
 package org.tribot.api.banking
 
-import org.tribot.automation.script.ScriptContext
+import org.tribot.api.ApiContext
 import org.tribot.automation.script.core.widgets.BankItem
 import org.tribot.automation.script.event.ListenerRegistration
 
@@ -11,7 +11,7 @@ import org.tribot.automation.script.event.ListenerRegistration
  * Usage:
  * ```
  * val cache = BankCache()
- * cache.startListening(ctx)  // hooks into game tick to snapshot bank when open
+ * cache.startListening()  // hooks into game tick to snapshot bank when open
  *
  * // Later, even with bank closed:
  * cache.contains(379)  // do we have lobsters?
@@ -40,7 +40,8 @@ class BankCache {
      * Manually refresh the cache from the current bank state.
      * Bank must be open for this to capture data.
      */
-    fun refresh(ctx: ScriptContext) {
+    fun refresh() {
+        val ctx = ApiContext.get()
         if (ctx.banking.isOpen()) {
             items = ctx.banking.getItems().toList()
             lastUpdated = System.currentTimeMillis()
@@ -51,7 +52,8 @@ class BankCache {
      * Start automatically updating the cache on each game tick when the bank is open.
      * Returns the listener registration for manual cleanup (also cleaned up by [stopListening]).
      */
-    fun startListening(ctx: ScriptContext): ListenerRegistration {
+    fun startListening(): ListenerRegistration {
+        val ctx = ApiContext.get()
         stopListening()
         val reg = ctx.events.onGameTick {
             if (ctx.banking.isOpen()) {

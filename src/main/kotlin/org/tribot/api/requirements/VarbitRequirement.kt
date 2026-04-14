@@ -1,6 +1,6 @@
 package org.tribot.api.requirements
 
-import org.tribot.automation.script.ScriptContext
+import org.tribot.api.ApiContext
 
 /**
  * Requires a varbit to satisfy a comparison against an expected value.
@@ -12,8 +12,8 @@ class VarbitRequirement(
     private val name: String = "Varbit $varbitId ${operation.symbol} $value"
 ) : Requirement {
 
-    override fun check(ctx: ScriptContext): Boolean {
-        val actual = ctx.client.getVarbitValue(varbitId)
+    override fun check(): Boolean {
+        val actual = ApiContext.get().client.getVarbitValue(varbitId)
         return operation.check(actual, value)
     }
 

@@ -1,15 +1,15 @@
 package org.tribot.api.query
 
-import org.tribot.automation.script.ScriptContext
+import org.tribot.api.ApiContext
 import org.tribot.automation.script.core.tabs.InventoryItem
 
 /**
  * Fluent query builder for items in the player's inventory.
  */
-class InventoryQueryBuilder(private val ctx: ScriptContext) : QueryBuilder<InventoryItem, InventoryQueryBuilder>() {
+class InventoryQueryBuilder : QueryBuilder<InventoryItem, InventoryQueryBuilder>() {
 
     fun names(vararg names: String): InventoryQueryBuilder = filter { item ->
-        val def = ctx.definitions.getItem(item.id)
+        val def = ApiContext.get().definitions.getItem(item.id)
         def != null && def.name in names
     }
 
@@ -18,7 +18,7 @@ class InventoryQueryBuilder(private val ctx: ScriptContext) : QueryBuilder<Inven
     }
 
     fun actions(vararg actions: String): InventoryQueryBuilder = filter { item ->
-        val def = ctx.definitions.getItem(item.id)
+        val def = ApiContext.get().definitions.getItem(item.id)
         def != null && def.inventoryActions.filterNotNull().any { it in actions.toSet() }
     }
 
@@ -36,5 +36,5 @@ class InventoryQueryBuilder(private val ctx: ScriptContext) : QueryBuilder<Inven
     }
 
     override fun fetchEntities(): List<InventoryItem> =
-        ctx.inventory.getItems()
+        ApiContext.get().inventory.getItems()
 }

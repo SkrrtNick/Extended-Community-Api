@@ -2,7 +2,7 @@ package org.tribot.api.consumable
 
 import net.runelite.api.Skill
 import org.tribot.api.waiting.Conditions
-import org.tribot.automation.script.ScriptContext
+import org.tribot.api.ApiContext
 
 /**
  * Helper functions for eating food and drinking potions in-game.
@@ -16,7 +16,8 @@ object ConsumableHelper {
      * @param itemId the item ID to eat
      * @return true if the food was eaten successfully (HP changed or item consumed)
      */
-    fun eat(ctx: ScriptContext, itemId: Int): Boolean {
+    fun eat(itemId: Int): Boolean {
+        val ctx = ApiContext.get()
         if (!ctx.inventory.contains(itemId)) return false
         val hpBefore = ctx.skills.getBoostedLevel(Skill.HITPOINTS)
         ctx.inventory.clickItem(itemId, "Eat")
@@ -32,7 +33,8 @@ object ConsumableHelper {
      * @param itemId the item ID to drink
      * @return true if the potion was drunk successfully (item consumed from inventory)
      */
-    fun drink(ctx: ScriptContext, itemId: Int): Boolean {
+    fun drink(itemId: Int): Boolean {
+        val ctx = ApiContext.get()
         if (!ctx.inventory.contains(itemId)) return false
         ctx.inventory.clickItem(itemId, "Drink")
         return Conditions.waitUntil(ctx.waiting, 1800) {
@@ -47,8 +49,8 @@ object ConsumableHelper {
      * @param ctx the script context
      * @return the Consumable with the highest heal, or null if no food found
      */
-    fun findBestFood(ctx: ScriptContext): Consumable? {
-        return ctx.inventory.getItems()
+    fun findBestFood(): Consumable? {
+        return ApiContext.get().inventory.getItems()
             .mapNotNull { ConsumableDatabase.get(it.id) }
             .filter { it.type == ConsumableType.FOOD || it.type == ConsumableType.COMBO }
             .maxByOrNull { consumable ->

@@ -1,6 +1,6 @@
 package org.tribot.api.requirements
 
-import org.tribot.automation.script.ScriptContext
+import org.tribot.api.ApiContext
 
 /**
  * Requires a VarClient integer to satisfy a comparison against an expected value.
@@ -15,8 +15,8 @@ class VarClientRequirement(
     private val name: String = "VarClient $varcId ${operation.symbol} $value"
 ) : Requirement {
 
-    override fun check(ctx: ScriptContext): Boolean {
-        val actual = ctx.client.getVarcIntValue(varcId)
+    override fun check(): Boolean {
+        val actual = ApiContext.get().client.getVarcIntValue(varcId)
         return operation.check(actual, value)
     }
 

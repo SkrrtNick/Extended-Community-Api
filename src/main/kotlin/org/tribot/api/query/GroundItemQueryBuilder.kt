@@ -1,15 +1,15 @@
 package org.tribot.api.query
 
-import org.tribot.automation.script.ScriptContext
+import org.tribot.api.ApiContext
 import org.tribot.automation.script.core.GroundItem
 
 /**
  * Fluent query builder for ground items in the game world.
  */
-class GroundItemQueryBuilder(private val ctx: ScriptContext) : QueryBuilder<GroundItem, GroundItemQueryBuilder>() {
+class GroundItemQueryBuilder : QueryBuilder<GroundItem, GroundItemQueryBuilder>() {
 
     fun names(vararg names: String): GroundItemQueryBuilder = filter { item ->
-        val def = ctx.definitions.getItem(item.id)
+        val def = ApiContext.get().definitions.getItem(item.id)
         def != null && def.name in names
     }
 
@@ -26,7 +26,7 @@ class GroundItemQueryBuilder(private val ctx: ScriptContext) : QueryBuilder<Grou
     }
 
     fun withinDistance(maxDistance: Int): GroundItemQueryBuilder = filter { item ->
-        val playerLocation = ctx.worldViews.getLocalPlayer()?.worldLocation ?: return@filter false
+        val playerLocation = ApiContext.get().worldViews.getLocalPlayer()?.worldLocation ?: return@filter false
         item.position.distanceTo(playerLocation) <= maxDistance
     }
 
@@ -36,5 +36,5 @@ class GroundItemQueryBuilder(private val ctx: ScriptContext) : QueryBuilder<Grou
     }
 
     override fun fetchEntities(): List<GroundItem> =
-        ctx.worldViews.getTopLevelGroundItems()
+        ApiContext.get().worldViews.getTopLevelGroundItems()
 }

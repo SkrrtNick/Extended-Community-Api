@@ -1,16 +1,16 @@
 package org.tribot.api.query
 
-import org.tribot.automation.script.ScriptContext
+import org.tribot.api.ApiContext
 import org.tribot.automation.script.core.tabs.EquipmentSlot
 import org.tribot.automation.script.core.tabs.EquippedItem
 
 /**
  * Fluent query builder for items in the player's equipment.
  */
-class EquipmentQueryBuilder(private val ctx: ScriptContext) : QueryBuilder<EquippedItem, EquipmentQueryBuilder>() {
+class EquipmentQueryBuilder : QueryBuilder<EquippedItem, EquipmentQueryBuilder>() {
 
     fun names(vararg names: String): EquipmentQueryBuilder = filter { item ->
-        val def = ctx.definitions.getItem(item.id)
+        val def = ApiContext.get().definitions.getItem(item.id)
         def != null && def.name in names
     }
 
@@ -23,7 +23,7 @@ class EquipmentQueryBuilder(private val ctx: ScriptContext) : QueryBuilder<Equip
     }
 
     fun actions(vararg actions: String): EquipmentQueryBuilder = filter { item ->
-        val def = ctx.definitions.getItem(item.id)
+        val def = ApiContext.get().definitions.getItem(item.id)
         def != null && def.inventoryActions.filterNotNull().any { it in actions.toSet() }
     }
 
@@ -31,7 +31,7 @@ class EquipmentQueryBuilder(private val ctx: ScriptContext) : QueryBuilder<Equip
 
     fun maxQuantity(max: Int): EquipmentQueryBuilder = filter { it.quantity <= max }
 
-    override fun fetchEntities(): List<EquippedItem> = ctx.equipment.getItems()
+    override fun fetchEntities(): List<EquippedItem> = ApiContext.get().equipment.getItems()
 
     override fun results(): QueryResults<EquippedItem> {
         val filtered = applyFilters(fetchEntities())

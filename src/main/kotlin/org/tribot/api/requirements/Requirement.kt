@@ -1,16 +1,14 @@
 package org.tribot.api.requirements
 
-import org.tribot.automation.script.ScriptContext
-
 /**
- * A condition that can be checked against the current [ScriptContext].
+ * A condition that can be checked against the current game state via [org.tribot.api.ApiContext].
  *
  * Requirements are composable — combine them with [CompositeRequirement]
  * or the helpers in [Requirements] to build complex preconditions.
  */
 interface Requirement {
     /** Returns `true` when the requirement is currently satisfied. */
-    fun check(ctx: ScriptContext): Boolean
+    fun check(): Boolean
 
     /** Human-readable description of what this requirement expects. */
     val displayText: String

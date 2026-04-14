@@ -1,6 +1,6 @@
 package org.tribot.api.requirements
 
-import org.tribot.automation.script.ScriptContext
+import org.tribot.api.ApiContext
 import org.tribot.automation.script.core.tabs.EquipmentSlot
 
 /**
@@ -15,8 +15,8 @@ class EquipmentRequirement(
 
     private val allIds: Set<Int> get() = setOf(itemId) + alternateIds
 
-    override fun check(ctx: ScriptContext): Boolean {
-        val equipped = ctx.equipment.getItemIn(slot) ?: return false
+    override fun check(): Boolean {
+        val equipped = ApiContext.get().equipment.getItemIn(slot) ?: return false
         return equipped.id in allIds
     }
 

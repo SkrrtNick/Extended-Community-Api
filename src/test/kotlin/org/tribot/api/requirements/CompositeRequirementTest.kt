@@ -2,8 +2,11 @@ package org.tribot.api.requirements
 
 import io.mockk.every
 import net.runelite.api.Skill
+import org.tribot.api.ApiContext
 import org.tribot.api.testing.fakeContext
 import org.tribot.automation.script.core.tabs.InventoryItem
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -11,12 +14,20 @@ import kotlin.test.assertTrue
 
 class CompositeRequirementTest {
 
-    private val ctx = fakeContext {
-        every { skills.getLevel(Skill.WOODCUTTING) } returns 60
-        every { skills.getLevel(Skill.COOKING) } returns 30
-        every { inventory.getItems() } returns listOf(
-            InventoryItem(995, 500, 0)
-        )
+    @BeforeTest
+    fun setUp() {
+        ApiContext.init(fakeContext {
+            every { skills.getLevel(Skill.WOODCUTTING) } returns 60
+            every { skills.getLevel(Skill.COOKING) } returns 30
+            every { inventory.getItems() } returns listOf(
+                InventoryItem(995, 500, 0)
+            )
+        })
+    }
+
+    @AfterTest
+    fun tearDown() {
+        ApiContext.reset()
     }
 
     // A requirement that always passes in our test context
@@ -34,7 +45,7 @@ class CompositeRequirementTest {
             LogicType.AND,
             listOf(passingSkillReq, passingItemReq)
         )
-        assertTrue(composite.check(ctx))
+        assertTrue(composite.check())
     }
 
     @Test
@@ -43,7 +54,7 @@ class CompositeRequirementTest {
             LogicType.AND,
             listOf(passingSkillReq, failingSkillReq)
         )
-        assertFalse(composite.check(ctx))
+        assertFalse(composite.check())
     }
 
     @Test
@@ -52,7 +63,7 @@ class CompositeRequirementTest {
             LogicType.AND,
             listOf(failingSkillReq, SkillRequirement(Skill.COOKING, 99))
         )
-        assertFalse(composite.check(ctx))
+        assertFalse(composite.check())
     }
 
     @Test
@@ -61,7 +72,7 @@ class CompositeRequirementTest {
             LogicType.OR,
             listOf(passingSkillReq, failingSkillReq)
         )
-        assertTrue(composite.check(ctx))
+        assertTrue(composite.check())
     }
 
     @Test
@@ -70,7 +81,7 @@ class CompositeRequirementTest {
             LogicType.OR,
             listOf(passingSkillReq, passingItemReq)
         )
-        assertTrue(composite.check(ctx))
+        assertTrue(composite.check())
     }
 
     @Test
@@ -79,7 +90,7 @@ class CompositeRequirementTest {
             LogicType.OR,
             listOf(failingSkillReq, SkillRequirement(Skill.COOKING, 99))
         )
-        assertFalse(composite.check(ctx))
+        assertFalse(composite.check())
     }
 
     @Test
@@ -88,7 +99,7 @@ class CompositeRequirementTest {
             LogicType.NOR,
             listOf(failingSkillReq, SkillRequirement(Skill.COOKING, 99))
         )
-        assertTrue(composite.check(ctx))
+        assertTrue(composite.check())
     }
 
     @Test
@@ -97,7 +108,7 @@ class CompositeRequirementTest {
             LogicType.NOR,
             listOf(passingSkillReq, failingSkillReq)
         )
-        assertFalse(composite.check(ctx))
+        assertFalse(composite.check())
     }
 
     @Test
@@ -106,7 +117,7 @@ class CompositeRequirementTest {
             LogicType.NAND,
             listOf(passingSkillReq, failingSkillReq)
         )
-        assertTrue(composite.check(ctx))
+        assertTrue(composite.check())
     }
 
     @Test
@@ -115,7 +126,7 @@ class CompositeRequirementTest {
             LogicType.NAND,
             listOf(passingSkillReq, passingItemReq)
         )
-        assertFalse(composite.check(ctx))
+        assertFalse(composite.check())
     }
 
     @Test
@@ -124,7 +135,7 @@ class CompositeRequirementTest {
             LogicType.XOR,
             listOf(passingSkillReq, failingSkillReq)
         )
-        assertTrue(composite.check(ctx))
+        assertTrue(composite.check())
     }
 
     @Test
@@ -133,7 +144,7 @@ class CompositeRequirementTest {
             LogicType.XOR,
             listOf(passingSkillReq, passingItemReq)
         )
-        assertFalse(composite.check(ctx))
+        assertFalse(composite.check())
     }
 
     @Test
@@ -142,43 +153,43 @@ class CompositeRequirementTest {
             LogicType.XOR,
             listOf(failingSkillReq, SkillRequirement(Skill.COOKING, 99))
         )
-        assertFalse(composite.check(ctx))
+        assertFalse(composite.check())
     }
 
     @Test
     fun `Requirements all helper creates AND composite`() {
         val composite = Requirements.all(passingSkillReq, passingItemReq)
-        assertTrue(composite.check(ctx))
+        assertTrue(composite.check())
 
         val composite2 = Requirements.all(passingSkillReq, failingSkillReq)
-        assertFalse(composite2.check(ctx))
+        assertFalse(composite2.check())
     }
 
     @Test
     fun `Requirements any helper creates OR composite`() {
         val composite = Requirements.any(passingSkillReq, failingSkillReq)
-        assertTrue(composite.check(ctx))
+        assertTrue(composite.check())
 
         val composite2 = Requirements.any(failingSkillReq, SkillRequirement(Skill.COOKING, 99))
-        assertFalse(composite2.check(ctx))
+        assertFalse(composite2.check())
     }
 
     @Test
     fun `Requirements none helper creates NOR composite`() {
         val composite = Requirements.none(failingSkillReq)
-        assertTrue(composite.check(ctx))
+        assertTrue(composite.check())
 
         val composite2 = Requirements.none(passingSkillReq)
-        assertFalse(composite2.check(ctx))
+        assertFalse(composite2.check())
     }
 
     @Test
     fun `Requirements not helper creates NOR with single requirement`() {
         val composite = Requirements.not(failingSkillReq)
-        assertTrue(composite.check(ctx))
+        assertTrue(composite.check())
 
         val composite2 = Requirements.not(passingSkillReq)
-        assertFalse(composite2.check(ctx))
+        assertFalse(composite2.check())
     }
 
     @Test
@@ -205,6 +216,6 @@ class CompositeRequirementTest {
     fun `nested composite requirements work correctly`() {
         val inner = Requirements.all(passingSkillReq, passingItemReq)
         val outer = Requirements.any(inner, failingSkillReq)
-        assertTrue(outer.check(ctx))
+        assertTrue(outer.check())
     }
 }

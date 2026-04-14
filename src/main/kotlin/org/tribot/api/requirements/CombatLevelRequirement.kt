@@ -1,6 +1,6 @@
 package org.tribot.api.requirements
 
-import org.tribot.automation.script.ScriptContext
+import org.tribot.api.ApiContext
 
 /**
  * Requires the player's combat level to satisfy a comparison.
@@ -10,8 +10,8 @@ class CombatLevelRequirement(
     val operation: Operation = Operation.GREATER_EQUAL
 ) : Requirement {
 
-    override fun check(ctx: ScriptContext): Boolean {
-        val actual = ctx.worldViews.getLocalPlayer()?.combatLevel ?: return false
+    override fun check(): Boolean {
+        val actual = ApiContext.get().worldViews.getLocalPlayer()?.combatLevel ?: return false
         return operation.check(actual, level)
     }
 
