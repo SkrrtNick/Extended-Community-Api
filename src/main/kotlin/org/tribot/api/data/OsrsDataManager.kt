@@ -12,6 +12,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.security.MessageDigest
+import java.time.Duration
 
 /**
  * Central cache coordinator for OSRS data files hosted on GitHub.
@@ -60,7 +61,9 @@ class OsrsDataManager(
     }
 
     private val gson = Gson()
-    private val httpClient: HttpClient = HttpClient.newHttpClient()
+    private val httpClient: HttpClient = HttpClient.newBuilder()
+        .connectTimeout(Duration.ofSeconds(10))
+        .build()
 
     @Volatile
     private var cachedMetadata: Metadata? = null
@@ -111,15 +114,16 @@ class OsrsDataManager(
             val request = HttpRequest.newBuilder()
                 .uri(URI.create("$baseUrl/metadata.json"))
                 .header("User-Agent", "osrs-data-client")
+                .timeout(Duration.ofSeconds(30))
                 .GET()
                 .build()
 
             val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
+            lastMetadataCheck = System.currentTimeMillis()
             if (response.statusCode() == 200) {
                 val type = object : TypeToken<Metadata>() {}.type
                 val meta: Metadata = gson.fromJson(response.body(), type)
                 cachedMetadata = meta
-                lastMetadataCheck = System.currentTimeMillis()
 
                 // Persist metadata to disk for offline use
                 try {
@@ -232,6 +236,7 @@ class OsrsDataManager(
             val request = HttpRequest.newBuilder()
                 .uri(URI.create("$baseUrl/$fileName"))
                 .header("User-Agent", "osrs-data-client")
+                .timeout(Duration.ofSeconds(30))
                 .GET()
                 .build()
 
