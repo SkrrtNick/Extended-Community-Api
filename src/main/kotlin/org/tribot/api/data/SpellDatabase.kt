@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap
  * testing). The [companion object][Companion] exposes static convenience
  * methods that delegate to a default singleton.
  */
-class SpellDatabase(private val manager: OsrsDataManager = OsrsDataManager()) {
+class SpellDatabase(private val manager: OsrsDataManager = OsrsDataManager.shared) {
 
     private val byName = ConcurrentHashMap<String, SpellDefinition>()
     private val bySpellbook = ConcurrentHashMap<String, List<SpellDefinition>>()

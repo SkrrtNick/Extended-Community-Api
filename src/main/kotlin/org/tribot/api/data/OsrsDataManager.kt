@@ -48,6 +48,13 @@ class OsrsDataManager(
         private const val METADATA_CHECK_INTERVAL_MS = 3_600_000L // 1 hour
 
         /**
+         * Shared default instance used by all database singletons.
+         * Ensures a single metadata check, HTTP client, and disk cache
+         * regardless of how many databases are accessed.
+         */
+        val shared: OsrsDataManager by lazy { OsrsDataManager() }
+
+        /**
          * Compute a SHA-256 hash of the given [input] string.
          *
          * @return a string in the form `sha256:<hex-digest>`

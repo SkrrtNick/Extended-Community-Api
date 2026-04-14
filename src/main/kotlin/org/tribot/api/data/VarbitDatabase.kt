@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap
  * testing). The [companion object][Companion] exposes static convenience
  * methods that delegate to a default singleton.
  */
-class VarbitDatabase(private val manager: OsrsDataManager = OsrsDataManager()) {
+class VarbitDatabase(private val manager: OsrsDataManager = OsrsDataManager.shared) {
 
     private val byIndex = ConcurrentHashMap<Int, VarbitDefinition>()
     private val byName = ConcurrentHashMap<String, VarbitDefinition>()

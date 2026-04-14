@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap
  * testing). The [companion object][Companion] exposes static convenience
  * methods that delegate to a default singleton.
  */
-class DropDatabase(private val manager: OsrsDataManager = OsrsDataManager()) {
+class DropDatabase(private val manager: OsrsDataManager = OsrsDataManager.shared) {
 
     private val byMonster = ConcurrentHashMap<String, List<DropEntry>>()
     private val byItem = ConcurrentHashMap<String, List<DropEntry>>()

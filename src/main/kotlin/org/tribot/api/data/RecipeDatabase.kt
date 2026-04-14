@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap
  * testing). The [companion object][Companion] exposes static convenience
  * methods that delegate to a default singleton.
  */
-class RecipeDatabase(private val manager: OsrsDataManager = OsrsDataManager()) {
+class RecipeDatabase(private val manager: OsrsDataManager = OsrsDataManager.shared) {
 
     private val byName = ConcurrentHashMap<String, RecipeDefinition>()
     private val bySkill = ConcurrentHashMap<String, List<RecipeDefinition>>()
