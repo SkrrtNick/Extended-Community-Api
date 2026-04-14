@@ -37,6 +37,12 @@ Composable game-state conditions with AND/OR/NOR/NAND/XOR logic via [`Requiremen
 - [`ItemRequirement`](src/main/kotlin/org/tribot/api/requirements/ItemRequirement.kt), [`EquipmentRequirement`](src/main/kotlin/org/tribot/api/requirements/EquipmentRequirement.kt), [`SkillRequirement`](src/main/kotlin/org/tribot/api/requirements/SkillRequirement.kt), [`QuestRequirement`](src/main/kotlin/org/tribot/api/requirements/QuestRequirement.kt), [`CombatLevelRequirement`](src/main/kotlin/org/tribot/api/requirements/CombatLevelRequirement.kt), [`PrayerRequirement`](src/main/kotlin/org/tribot/api/requirements/PrayerRequirement.kt), [`FreeSlotRequirement`](src/main/kotlin/org/tribot/api/requirements/FreeSlotRequirement.kt)
 - [`VarbitRequirement`](src/main/kotlin/org/tribot/api/requirements/VarbitRequirement.kt), [`SettingRequirement`](src/main/kotlin/org/tribot/api/requirements/SettingRequirement.kt), [`VarClientRequirement`](src/main/kotlin/org/tribot/api/requirements/VarClientRequirement.kt), [`ZoneRequirement`](src/main/kotlin/org/tribot/api/requirements/ZoneRequirement.kt), [`WidgetRequirement`](src/main/kotlin/org/tribot/api/requirements/WidgetRequirement.kt)
 - `Requirements.all(...)`, `Requirements.any(...)`, `Requirements.not(...)`
+- [`EquipmentRequirement`](src/main/kotlin/org/tribot/api/requirements/EquipmentRequirement.kt) integrates with [`ItemDatabase`](src/main/kotlin/org/tribot/api/data/ItemDatabase.kt) to auto-resolve skill requirements:
+  ```kotlin
+  val whipReq = EquipmentRequirement(itemId = 4151, slot = EquipmentSlot.WEAPON)
+  whipReq.skillRequirements  // [SkillRequirement(ATTACK, 70)] — resolved from ItemDatabase
+  whipReq.canEquip()         // true if player has 70 Attack
+  ```
 
 ### Loadout System
 Define desired inventory + equipment, auto-restock from bank in one call via [`LoadoutManager`](src/main/kotlin/org/tribot/api/loadout/LoadoutManager.kt).
