@@ -40,7 +40,8 @@ data class EquipmentStats(
 data class WeaponStats(
     val attackSpeed: Int,
     val weaponType: String,
-    val stances: List<WeaponStance>
+    val stances: List<WeaponStance>,
+    val attackRange: Int? = null
 )
 
 data class WeaponStance(
