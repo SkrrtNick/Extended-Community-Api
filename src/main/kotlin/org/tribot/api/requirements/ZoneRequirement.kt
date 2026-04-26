@@ -15,7 +15,7 @@ class ZoneRequirement(
 ) : Requirement {
 
     override fun check(): Boolean {
-        val pos = ApiContext.get().worldViews.getLocalPlayer()?.worldLocation ?: return false
+        val pos = ApiContext.get().client.localPlayer?.worldLocation ?: return false
         val inZone = pos.x in southWest.x..northEast.x &&
             pos.y in southWest.y..northEast.y &&
             pos.plane in southWest.plane..northEast.plane

@@ -25,7 +25,7 @@ class NpcQueryBuilderTest {
         val localPlayer = fakePlayer(worldLocation = playerLocation)
         val ctx = fakeContext {
             every { worldViews.getTopLevelNpcs() } returns npcs
-            every { worldViews.getLocalPlayer() } returns localPlayer
+            every { client.localPlayer } returns localPlayer
             for ((id, def) in npcDefs) {
                 every { definitions.getNpc(id) } returns def
             }
@@ -240,7 +240,7 @@ class NpcQueryBuilderTest {
         )
         ApiContext.init(fakeContext {
             every { worldViews.getTopLevelNpcs() } returns npcs
-            every { worldViews.getLocalPlayer() } returns localPlayer
+            every { client.localPlayer } returns localPlayer
             every { definitions.getNpc(1) } returns fakeNpcDef(id = 1, name = "AttackingMe")
             every { definitions.getNpc(2) } returns fakeNpcDef(id = 2, name = "AttackingOther")
             every { definitions.getNpc(3) } returns fakeNpcDef(id = 3, name = "Idle")

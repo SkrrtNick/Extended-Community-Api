@@ -33,7 +33,7 @@ class ObjectQueryBuilderTest {
         val localPlayer = fakePlayer(worldLocation = playerLocation)
         val ctx = fakeContext {
             every { worldViews.getTopLevelObjects() } returns objects
-            every { worldViews.getLocalPlayer() } returns localPlayer
+            every { client.localPlayer } returns localPlayer
             for ((id, def) in objectDefs) {
                 every { definitions.getObject(id) } returns def
             }

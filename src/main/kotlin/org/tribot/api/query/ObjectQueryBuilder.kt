@@ -23,7 +23,7 @@ class ObjectQueryBuilder : QueryBuilder<TileObject, ObjectQueryBuilder>() {
     }
 
     fun withinDistance(maxDistance: Int): ObjectQueryBuilder = filter { obj ->
-        val playerLocation = ApiContext.get().worldViews.getLocalPlayer()?.worldLocation ?: return@filter false
+        val playerLocation = ApiContext.get().client.localPlayer?.worldLocation ?: return@filter false
         obj.worldLocation.distanceTo(playerLocation) <= maxDistance
     }
 

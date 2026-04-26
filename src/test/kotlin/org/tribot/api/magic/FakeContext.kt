@@ -19,6 +19,7 @@ import org.tribot.automation.script.core.world.WorldCache
 import org.tribot.automation.script.event.Events
 import org.tribot.automation.script.input.*
 import org.tribot.automation.script.logging.ScriptLogger
+import org.tribot.automation.script.navigation.Navigation
 import org.tribot.automation.script.util.Waiting
 
 // ---------------------------------------------------------------------------
@@ -109,7 +110,9 @@ fun fakeContext(
     client: FakeClient = FakeClient()
 ): ScriptContext = object : ScriptContext {
     override val client: Client = client
+    override val clientRaw: Client get() = stub("clientRaw")
     override val clientThread: ClientThread get() = stub("clientThread")
+    override val navigation: Navigation get() = stub("navigation")
     override val mouse: Mouse get() = stub("mouse")
     override val keyboard: Keyboard get() = stub("keyboard")
     override val interaction: Interaction get() = stub("interaction")

@@ -38,7 +38,7 @@ class GroundItemQueryBuilderTest {
         val localPlayer = fakePlayer(worldLocation = playerLocation)
         val ctx = fakeContext {
             every { worldViews.getTopLevelGroundItems() } returns groundItems
-            every { worldViews.getLocalPlayer() } returns localPlayer
+            every { client.localPlayer } returns localPlayer
             for ((id, def) in itemDefs) {
                 every { definitions.getItem(id) } returns def
             }
@@ -59,7 +59,7 @@ class GroundItemQueryBuilderTest {
 
         val results = GroundItemQueryBuilder().names("Coins").results()
         assertEquals(1, results.size)
-        assertEquals(995, results.first()?.id)
+        assertEquals(995, results.first()?.item?.id)
     }
 
     @Test
@@ -75,7 +75,7 @@ class GroundItemQueryBuilderTest {
 
         val results = GroundItemQueryBuilder().ids(526).results()
         assertEquals(1, results.size)
-        assertEquals(526, results.first()?.id)
+        assertEquals(526, results.first()?.item?.id)
     }
 
     @Test
@@ -91,7 +91,7 @@ class GroundItemQueryBuilderTest {
 
         val results = GroundItemQueryBuilder().minQuantity(50).results()
         assertEquals(1, results.size)
-        assertEquals(100, results.first()?.quantity)
+        assertEquals(100, results.first()?.item?.quantity)
     }
 
     @Test
@@ -107,7 +107,7 @@ class GroundItemQueryBuilderTest {
 
         val results = GroundItemQueryBuilder().maxQuantity(10).results()
         assertEquals(1, results.size)
-        assertEquals(5, results.first()?.quantity)
+        assertEquals(5, results.first()?.item?.quantity)
     }
 
     @Test
@@ -123,6 +123,6 @@ class GroundItemQueryBuilderTest {
 
         val results = GroundItemQueryBuilder().withinDistance(10).results()
         assertEquals(1, results.size)
-        assertEquals(995, results.first()?.id)
+        assertEquals(995, results.first()?.item?.id)
     }
 }

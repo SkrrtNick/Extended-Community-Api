@@ -20,7 +20,7 @@ repositories {
 }
 
 dependencies {
-    api("com.github.TribotRS:automation-sdk:latest.release")
+    api("com.github.TribotRS:automation-sdk:v1.0.15")
     compileOnly("net.runelite:client:latest.release")
     implementation("com.google.code.gson:gson:2.11.0")
     testImplementation(kotlin("test"))

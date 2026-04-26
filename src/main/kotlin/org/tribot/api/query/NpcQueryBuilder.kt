@@ -23,7 +23,7 @@ class NpcQueryBuilder : QueryBuilder<NPC, NpcQueryBuilder>() {
     }
 
     fun withinDistance(maxDistance: Int): NpcQueryBuilder = filter { npc ->
-        val playerLocation = ApiContext.get().worldViews.getLocalPlayer()?.worldLocation ?: return@filter false
+        val playerLocation = ApiContext.get().client.localPlayer?.worldLocation ?: return@filter false
         npc.worldLocation.distanceTo(playerLocation) <= maxDistance
     }
 
@@ -40,7 +40,7 @@ class NpcQueryBuilder : QueryBuilder<NPC, NpcQueryBuilder>() {
     }
 
     fun interactingWithMe(): NpcQueryBuilder = filter { npc ->
-        val localPlayer = ApiContext.get().worldViews.getLocalPlayer()
+        val localPlayer = ApiContext.get().client.localPlayer
         localPlayer != null && npc.interacting == localPlayer
     }
 

@@ -83,7 +83,7 @@ class EventDispatcherTest {
             every { equipment.getItems() } returns setup.initialEquipment
 
             // World views
-            every { worldViews.getLocalPlayer() } returns localPlayer
+            every { client.localPlayer } returns localPlayer
             every { worldViews.getTopLevelNpcs() } returns setup.initialNpcs
             every { worldViews.getTopLevelPlayers() } returns (setup.initialPlayers + localPlayer)
             every { worldViews.getTopLevelObjects() } returns setup.initialObjects
@@ -371,7 +371,7 @@ class EventDispatcherTest {
 
         // New player appears
         val otherPlayer = fakePlayer(name = "OtherPlayer")
-        val localPlayer = harness.ctx.worldViews.getLocalPlayer()!!
+        val localPlayer = harness.ctx.client.localPlayer!!
         every { harness.ctx.worldViews.getTopLevelPlayers() } returns listOf(localPlayer, otherPlayer)
         harness.simulateTick()
 
@@ -392,7 +392,7 @@ class EventDispatcherTest {
         dispatcher.start()
 
         // Player gone (only local player remains)
-        val localPlayer = harness.ctx.worldViews.getLocalPlayer()!!
+        val localPlayer = harness.ctx.client.localPlayer!!
         every { harness.ctx.worldViews.getTopLevelPlayers() } returns listOf(localPlayer)
         harness.simulateTick()
 
@@ -476,7 +476,7 @@ class EventDispatcherTest {
         harness.simulateTick()
 
         assertEquals(1, spawnedItems.size)
-        assertEquals(526, spawnedItems[0].id)
+        assertEquals(526, spawnedItems[0].item.id)
     }
 
     @Test
@@ -495,7 +495,7 @@ class EventDispatcherTest {
         harness.simulateTick()
 
         assertEquals(1, despawnedItems.size)
-        assertEquals(526, despawnedItems[0].id)
+        assertEquals(526, despawnedItems[0].item.id)
     }
 
     // =========================================================================
@@ -689,7 +689,7 @@ class EventDispatcherTest {
         val harness = buildDispatcherContext()
         val dispatcher = EventDispatcher()
 
-        val localPlayer = harness.ctx.worldViews.getLocalPlayer()!!
+        val localPlayer = harness.ctx.client.localPlayer!!
         every { localPlayer.animation } returns -1
 
         val events = mutableListOf<Triple<Actor, Int, Int>>()
@@ -742,7 +742,7 @@ class EventDispatcherTest {
         val harness = buildDispatcherContext()
         val dispatcher = EventDispatcher()
 
-        val localPlayer = harness.ctx.worldViews.getLocalPlayer()!!
+        val localPlayer = harness.ctx.client.localPlayer!!
         every { localPlayer.interacting } returns null
 
         val events = mutableListOf<Triple<Actor, Actor?, Actor?>>()
@@ -890,7 +890,7 @@ class EventDispatcherTest {
         val harness = buildDispatcherContext()
         val dispatcher = EventDispatcher()
 
-        val localPlayer = harness.ctx.worldViews.getLocalPlayer()!!
+        val localPlayer = harness.ctx.client.localPlayer!!
         every { localPlayer.animation } returns -1
 
         dispatcher.onAnimationChanged { _, _, _ -> }

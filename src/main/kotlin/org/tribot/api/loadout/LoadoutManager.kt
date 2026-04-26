@@ -101,7 +101,7 @@ object LoadoutManager {
         val ctx = ApiContext.get()
         if (ctx.banking.isOpen()) return true
 
-        val playerLocation = ctx.worldViews.getLocalPlayer()?.worldLocation ?: return false
+        val playerLocation = ctx.client.localPlayer?.worldLocation ?: return false
 
         // Try object with "Bank" action first
         val bankObject = ObjectQueryBuilder()

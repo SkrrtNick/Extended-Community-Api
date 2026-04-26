@@ -24,7 +24,7 @@ class PlayerQueryBuilder : QueryBuilder<Player, PlayerQueryBuilder>() {
     fun notAnimating(): PlayerQueryBuilder = filter { it.animation == -1 }
 
     fun withinDistance(maxDistance: Int): PlayerQueryBuilder = filter { player ->
-        val playerLocation = ApiContext.get().worldViews.getLocalPlayer()?.worldLocation ?: return@filter false
+        val playerLocation = ApiContext.get().client.localPlayer?.worldLocation ?: return@filter false
         player.worldLocation.distanceTo(playerLocation) <= maxDistance
     }
 
@@ -37,7 +37,7 @@ class PlayerQueryBuilder : QueryBuilder<Player, PlayerQueryBuilder>() {
     override fun results(): LocatableQueryResults<Player> {
         var entities = fetchEntities()
         if (!includeLocal) {
-            val localPlayer = ApiContext.get().worldViews.getLocalPlayer()
+            val localPlayer = ApiContext.get().client.localPlayer
             if (localPlayer != null) {
                 entities = entities.filter { it != localPlayer }
             }

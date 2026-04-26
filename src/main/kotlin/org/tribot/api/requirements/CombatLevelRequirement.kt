@@ -11,7 +11,7 @@ class CombatLevelRequirement(
 ) : Requirement {
 
     override fun check(): Boolean {
-        val actual = ApiContext.get().worldViews.getLocalPlayer()?.combatLevel ?: return false
+        val actual = ApiContext.get().client.localPlayer?.combatLevel ?: return false
         return operation.check(actual, level)
     }
 

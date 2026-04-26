@@ -46,7 +46,7 @@ object GrandExchange {
             .actions("Exchange")
             .withinDistance(15)
             .results()
-            .nearest(ctx.worldViews.getLocalPlayer()!!.worldLocation)
+            .nearest(ctx.client.localPlayer!!.worldLocation)
             ?: return false
         ctx.interaction.click(clerk, "Exchange")
         return Conditions.waitUntil(ctx.waiting, 5000) { isOpen() }

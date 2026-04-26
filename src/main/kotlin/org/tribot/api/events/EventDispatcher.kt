@@ -233,7 +233,7 @@ class EventDispatcher {
         prevInventory = ctx.inventory.getItems().toList()
         prevEquipment = ctx.equipment.getItems().toList()
         prevNpcIndices = ctx.worldViews.getTopLevelNpcs().associateBy { it.index }
-        val localPlayer = ctx.worldViews.getLocalPlayer()
+        val localPlayer = ctx.client.localPlayer
         prevPlayerNames = ctx.worldViews.getTopLevelPlayers()
             .filter { it != localPlayer && it.name != null }
             .associateBy { it.name!! }
@@ -274,7 +274,7 @@ class EventDispatcher {
 
     private fun snapshotActorsForFrame() {
         val allActors = mutableListOf<Actor>()
-        ctx.worldViews.getLocalPlayer()?.let { allActors.add(it) }
+        ctx.client.localPlayer?.let { allActors.add(it) }
         allActors.addAll(ctx.worldViews.getTopLevelNpcs())
         allActors.addAll(ctx.worldViews.getTopLevelPlayers())
 
@@ -367,7 +367,7 @@ class EventDispatcher {
 
     private fun pollPlayers() {
         if (playerSpawnedListeners.isEmpty() && playerDespawnedListeners.isEmpty()) return
-        val localPlayer = ctx.worldViews.getLocalPlayer()
+        val localPlayer = ctx.client.localPlayer
         val current = ctx.worldViews.getTopLevelPlayers()
             .filter { it != localPlayer && it.name != null }
             .associateBy { it.name!! }
@@ -509,7 +509,7 @@ class EventDispatcher {
         if (!initialized) return
 
         val allActors = mutableListOf<Actor>()
-        ctx.worldViews.getLocalPlayer()?.let { allActors.add(it) }
+        ctx.client.localPlayer?.let { allActors.add(it) }
         allActors.addAll(ctx.worldViews.getTopLevelNpcs())
         allActors.addAll(ctx.worldViews.getTopLevelPlayers())
 
@@ -561,6 +561,6 @@ class EventDispatcher {
 
     private fun groundItemKey(item: GroundItem): Long {
         val pos = item.position
-        return (item.id.toLong() shl 32) or (pos.x.toLong() shl 16) or (pos.y.toLong() shl 2) or pos.plane.toLong()
+        return (item.item.id.toLong() shl 32) or (pos.x.toLong() shl 16) or (pos.y.toLong() shl 2) or pos.plane.toLong()
     }
 }
