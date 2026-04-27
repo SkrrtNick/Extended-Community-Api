@@ -74,7 +74,7 @@ Database of food healing values and potion boost formulas, validated against the
 Derived RuneLite-equivalent events by polling game state via [`EventDispatcher`](src/main/kotlin/org/tribot/api/events/EventDispatcher.kt) — no SDK modifications needed.
 
 **Tick-rate (~600ms):**
-StatChanged, InventoryChanged, EquipmentChanged, NpcSpawned/Despawned, PlayerSpawned/Despawned, ObjectSpawned/Despawned, GroundItemSpawned/Despawned, VarbitChanged, SettingChanged, VarClientChanged, GEOfferChanged, WidgetOpened/Closed
+StatChanged, InventoryChanged, EquipmentChanged, NpcSpawned/Despawned/Death, PlayerSpawned/Despawned, ObjectSpawned/Despawned, GroundItemSpawned/Despawned, VarbitChanged, SettingChanged, VarClientChanged, GEOfferChanged, WidgetOpened/Closed
 
 **Frame-rate (~20ms):**
 AnimationChanged, InteractingChanged, HealthChanged

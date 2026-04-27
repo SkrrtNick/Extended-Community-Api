@@ -18,6 +18,7 @@ import org.tribot.automation.script.event.ListenerRegistration
  * val dispatcher = EventDispatcher()
  * dispatcher.onStatChanged { skill, oldXp, newXp, _, _, _, _ -> println("Gained ${newXp - oldXp} xp") }
  * dispatcher.onNpcSpawned { npc -> println("${npc.name} appeared") }
+ * dispatcher.onNpcDeath { npc -> println("${npc.name} died") }
  * dispatcher.onVarbitChanged(4070) { old, new -> println("Spellbook: $old -> $new") }
  * dispatcher.onWidgetOpened(465) { println("GE opened") }
  * dispatcher.start()
@@ -42,6 +43,7 @@ class EventDispatcher {
     // NPC events
     private val npcSpawnedListeners = mutableListOf<(NPC) -> Unit>()
     private val npcDespawnedListeners = mutableListOf<(NPC) -> Unit>()
+    private val npcDeathListeners = mutableListOf<(NPC) -> Unit>()
 
     // Player events
     private val playerSpawnedListeners = mutableListOf<(Player) -> Unit>()
@@ -93,6 +95,7 @@ class EventDispatcher {
     private var prevInventory: List<InventoryItem> = emptyList()
     private var prevEquipment: List<EquippedItem> = emptyList()
     private var prevNpcIndices: Map<Int, NPC> = emptyMap()
+    private var prevDeadNpcIndices: Set<Int> = emptySet()
     private var prevPlayerNames: Map<String, Player> = emptyMap()
     private var prevObjectKeys: Map<Long, TileObject> = emptyMap()
     private var prevGroundItemKeys: Map<Long, GroundItem> = emptyMap()
@@ -116,6 +119,15 @@ class EventDispatcher {
     fun onEquipmentChanged(listener: (old: List<EquippedItem>, new: List<EquippedItem>) -> Unit) { equipmentChangedListeners.add(listener) }
     fun onNpcSpawned(listener: (NPC) -> Unit) { npcSpawnedListeners.add(listener) }
     fun onNpcDespawned(listener: (NPC) -> Unit) { npcDespawnedListeners.add(listener) }
+
+    /**
+     * Fires when a tracked NPC's death animation triggers (i.e. [Actor.isDead] flips
+     * from `false` to `true`). Reacts faster than [onNpcDespawned] — the despawn event
+     * waits until the corpse leaves the scene, while this fires the tick the death
+     * animation starts. Useful for dropping a target the moment it dies instead of
+     * waiting out the death-animation window.
+     */
+    fun onNpcDeath(listener: (NPC) -> Unit) { npcDeathListeners.add(listener) }
     fun onPlayerSpawned(listener: (Player) -> Unit) { playerSpawnedListeners.add(listener) }
     fun onPlayerDespawned(listener: (Player) -> Unit) { playerDespawnedListeners.add(listener) }
     fun onObjectSpawned(listener: (TileObject) -> Unit) { objectSpawnedListeners.add(listener) }
@@ -232,7 +244,9 @@ class EventDispatcher {
         snapshotStats()
         prevInventory = ctx.inventory.getItems().toList()
         prevEquipment = ctx.equipment.getItems().toList()
-        prevNpcIndices = ctx.worldViews.getTopLevelNpcs().associateBy { it.index }
+        val currentNpcs = ctx.worldViews.getTopLevelNpcs()
+        prevNpcIndices = currentNpcs.associateBy { it.index }
+        prevDeadNpcIndices = currentNpcs.filter { it.isDead }.map { it.index }.toHashSet()
         val localPlayer = ctx.client.localPlayer
         prevPlayerNames = ctx.worldViews.getTopLevelPlayers()
             .filter { it != localPlayer && it.name != null }
@@ -343,7 +357,7 @@ class EventDispatcher {
     }
 
     private fun pollNpcs() {
-        if (npcSpawnedListeners.isEmpty() && npcDespawnedListeners.isEmpty()) return
+        if (npcSpawnedListeners.isEmpty() && npcDespawnedListeners.isEmpty() && npcDeathListeners.isEmpty()) return
         val current = ctx.worldViews.getTopLevelNpcs().associateBy { it.index }
 
         if (npcSpawnedListeners.isNotEmpty()) {
@@ -360,6 +374,19 @@ class EventDispatcher {
                     npcDespawnedListeners.forEach { it(npc) }
                 }
             }
+        }
+
+        if (npcDeathListeners.isNotEmpty()) {
+            val newDeadIndices = HashSet<Int>()
+            for ((index, npc) in current) {
+                if (npc.isDead) {
+                    newDeadIndices.add(index)
+                    if (index !in prevDeadNpcIndices) {
+                        npcDeathListeners.forEach { it(npc) }
+                    }
+                }
+            }
+            prevDeadNpcIndices = newDeadIndices
         }
 
         prevNpcIndices = current
