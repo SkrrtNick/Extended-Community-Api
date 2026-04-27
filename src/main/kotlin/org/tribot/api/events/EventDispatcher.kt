@@ -218,11 +218,6 @@ class EventDispatcher {
      * per [spotAnimId] added — a separate invocation per ID joining the actor's
      * active set.
      *
-     * Mirrors the DreamBot `AnimationListener.onPlayerSpotAnimation` /
-     * `onNPCSpotAnimation` semantics: only fires on *added*. Spotanim removal
-     * (cycle end) is not reported — consumers that care about effect duration
-     * should track timing themselves from the added event.
-     *
      * Polled per-frame, so latency is bounded by a single client render frame.
      */
     fun onSpotAnimAdded(listener: (actor: Actor, spotAnimId: Int) -> Unit) { spotAnimAddedListeners.add(listener) }
