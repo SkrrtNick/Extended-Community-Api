@@ -4,6 +4,8 @@ Higher-level Kotlin APIs for the [TribotRS Automation SDK](https://github.com/Tr
 
 > **Kotlin only** — this library is written in and designed for Kotlin. Java interop is not a goal.
 
+**API reference:** [skrrtnick.github.io/Extended-Community-Api](https://skrrtnick.github.io/Extended-Community-Api/) — full Dokka-generated docs, redeployed on every push to `main`.
+
 ## Installation
 
 Add the JitPack repository and dependency to your script's `build.gradle.kts`:
@@ -25,7 +27,11 @@ dependencies {
 ### Query Builders
 Fluent query builders for finding game entities. Reusable builders with filter chaining and a [`QueryResults`](src/main/kotlin/org/tribot/api/query/QueryResults.kt) wrapper.
 
-- [**NPC**](src/main/kotlin/org/tribot/api/query/NpcQueryBuilder.kt), [**Object**](src/main/kotlin/org/tribot/api/query/ObjectQueryBuilder.kt), [**GroundItem**](src/main/kotlin/org/tribot/api/query/GroundItemQueryBuilder.kt), [**Player**](src/main/kotlin/org/tribot/api/query/PlayerQueryBuilder.kt) — distance, name, ID, action, animation, combat state filters + `nearest()`, `sortByDistance()`
+- [**NPC**](src/main/kotlin/org/tribot/api/query/NpcQueryBuilder.kt) — names, IDs, actions, distance, animation, combat-state, level filters
+- [**Object**](src/main/kotlin/org/tribot/api/query/ObjectQueryBuilder.kt) — names, IDs, actions, distance
+- [**GroundItem**](src/main/kotlin/org/tribot/api/query/GroundItemQueryBuilder.kt) — names, IDs, quantity, distance
+- [**Player**](src/main/kotlin/org/tribot/api/query/PlayerQueryBuilder.kt) — names, combat level, animation, distance
+- All four return [`LocatableQueryResults`](src/main/kotlin/org/tribot/api/query/LocatableQueryResults.kt) — `nearest(origin)`, `furthest(origin)`, `sortByDistance(origin)`
 - [**Inventory**](src/main/kotlin/org/tribot/api/query/InventoryQueryBuilder.kt), [**Bank**](src/main/kotlin/org/tribot/api/query/BankQueryBuilder.kt), [**Equipment**](src/main/kotlin/org/tribot/api/query/EquipmentQueryBuilder.kt) — name, ID, action, quantity filters
 - [**Widget**](src/main/kotlin/org/tribot/api/query/WidgetQueryBuilder.kt) — text, actions, sprite, item ID, visibility, child traversal
 - [**World**](src/main/kotlin/org/tribot/api/query/WorldQueryBuilder.kt) — members, PvP, population, region, activity filters
@@ -47,7 +53,7 @@ Composable game-state conditions with AND/OR/NOR/NAND/XOR logic via [`Requiremen
 ### Loadout System
 Define desired inventory + equipment, auto-restock from bank in one call via [`LoadoutManager`](src/main/kotlin/org/tribot/api/loadout/LoadoutManager.kt).
 
-- `LoadoutManager.fulfill(ctx, loadout)` — open bank, deposit unwanted, withdraw missing, equip gear
+- `LoadoutManager.fulfill(loadout)` — open bank, deposit unwanted, withdraw missing, equip gear
 - Supports alternate item IDs (e.g. any tier of axe) via [`LoadoutItem`](src/main/kotlin/org/tribot/api/loadout/Loadout.kt)
 
 ### Grand Exchange
@@ -59,7 +65,7 @@ Offer management, price lookups, and GE interaction via [`GrandExchange`](src/ma
 ### Magic / Spells
 Typed [`Spell`](src/main/kotlin/org/tribot/api/magic/Spell.kt) enum with all 4 spellbooks (~140 spells), rune requirements, and staff support.
 
-- [`SpellHelper`](src/main/kotlin/org/tribot/api/magic/SpellHelper.kt)`.canCast(ctx, spell)` — checks spellbook, level, runes (with staff/tome/combo rune support)
+- [`SpellHelper`](src/main/kotlin/org/tribot/api/magic/SpellHelper.kt)`.canCast(spell)` — checks spellbook, level, runes (with staff/tome/combo rune support)
 - [`Staff`](src/main/kotlin/org/tribot/api/magic/Staff.kt) enum — all elemental/battle/mystic staves, tomes, Kodai wand, Twinflame staff
 - [`RuneType`](src/main/kotlin/org/tribot/api/magic/RuneType.kt) — combo rune substitution (smoke, mist, dust, mud, lava, steam, sunfire, aether)
 
@@ -67,20 +73,20 @@ Typed [`Spell`](src/main/kotlin/org/tribot/api/magic/Spell.kt) enum with all 4 s
 Database of food healing values and potion boost formulas, validated against the OSRS Wiki.
 
 - [`ConsumableDatabase`](src/main/kotlin/org/tribot/api/consumable/ConsumableDatabase.kt)`.get(itemId)` — heal amounts, stat boosts/drains, special effects
-- [`ConsumableHelper`](src/main/kotlin/org/tribot/api/consumable/ConsumableHelper.kt)`.eat(ctx, itemId)`, `.drink(ctx, itemId)` — with wait-for-effect
+- [`ConsumableHelper`](src/main/kotlin/org/tribot/api/consumable/ConsumableHelper.kt)`.eat(itemId)`, `.drink(itemId)` — with wait-for-effect
 - Covers food, potions, brews, pies, combo food, and special items (Anglerfish, Sara brew, Super restore)
 
 ### Event Dispatcher
 Derived RuneLite-equivalent events by polling game state via [`EventDispatcher`](src/main/kotlin/org/tribot/api/events/EventDispatcher.kt) — no SDK modifications needed.
 
 **Tick-rate (~600ms):**
-StatChanged, InventoryChanged, EquipmentChanged, NpcSpawned/Despawned/Death, PlayerSpawned/Despawned, ObjectSpawned/Despawned, GroundItemSpawned/Despawned, VarbitChanged, SettingChanged, VarClientChanged, GEOfferChanged, WidgetOpened/Closed
+StatChanged, InventoryChanged, EquipmentChanged, NpcSpawned/Despawned/Death, PlayerSpawned/Despawned, ObjectSpawned/Despawned, GroundItemSpawned/Despawned, VarbitChanged, SettingChanged, VarcChanged, GrandExchangeOfferChanged, WidgetOpened/Closed
 
 **Frame-rate (~20ms):**
-AnimationChanged, InteractingChanged, HealthChanged
+AnimationChanged, SpotAnimAdded, InteractingChanged, HealthChanged, ProjectileSpawned
 
 ### Conditional Waiting
-[`Conditions`](src/main/kotlin/org/tribot/api/waiting/Conditions.kt) — `waitUntil(timeout) { condition }` with humanized polling via player profiles.
+[`Conditions`](src/main/kotlin/org/tribot/api/waiting/Conditions.kt) — `waitUntil(waiting, timeoutMs) { condition }`, with an overload that takes a `PlayerProfile` for humanized polling.
 
 ### Player Profile / Player Sense
 Per-account behavioral profiles for consistent, human-like variance. Seed-based generation with overridable properties via [`PlayerProfile`](src/main/kotlin/org/tribot/api/preferences/PlayerProfile.kt).
