@@ -22,6 +22,7 @@ fun fakeNpc(
     worldLocation: WorldPoint = WorldPoint(3200, 3200, 0),
     combatLevel: Int = 1,
     animation: Int = -1,
+    spotAnims: List<Int> = emptyList(),
     interacting: Actor? = null,
     healthRatio: Int = -1,
     healthScale: Int = -1
@@ -32,6 +33,7 @@ fun fakeNpc(
     every { npc.worldLocation } returns worldLocation
     every { npc.combatLevel } returns combatLevel
     every { npc.animation } returns animation
+    every { npc.spotAnims } returns fakeSpotAnimTable(spotAnims)
     every { npc.interacting } returns interacting
     every { npc.healthRatio } returns healthRatio
     every { npc.healthScale } returns healthScale
@@ -42,14 +44,32 @@ fun fakePlayer(
     name: String = "Player",
     worldLocation: WorldPoint = WorldPoint(3200, 3200, 0),
     combatLevel: Int = 70,
-    animation: Int = -1
+    animation: Int = -1,
+    spotAnims: List<Int> = emptyList()
 ): Player {
     val player = mockk<Player>(relaxed = true)
     every { player.name } returns name
     every { player.worldLocation } returns worldLocation
     every { player.combatLevel } returns combatLevel
     every { player.animation } returns animation
+    every { player.spotAnims } returns fakeSpotAnimTable(spotAnims)
     return player
+}
+
+/**
+ * Builds an [IterableHashTable] of [ActorSpotAnim] mocks for the given spotanim IDs.
+ * Each call to [Iterable.iterator] returns a fresh iterator, so frame-poll loops can
+ * iterate the table multiple times without exhausting it.
+ */
+fun fakeSpotAnimTable(ids: List<Int>): IterableHashTable<ActorSpotAnim> {
+    val entries = ids.map { id ->
+        mockk<ActorSpotAnim>(relaxed = true).also { every { it.id } returns id }
+    }
+    return object : IterableHashTable<ActorSpotAnim> {
+        override fun get(hash: Long): ActorSpotAnim? = null
+        override fun put(node: ActorSpotAnim, hash: Long) {}
+        override fun iterator(): MutableIterator<ActorSpotAnim> = entries.toMutableList().iterator()
+    }
 }
 
 fun fakeNpcDef(

@@ -7,6 +7,7 @@ import org.tribot.api.ApiContext
 import org.tribot.api.testing.fakeContext
 import org.tribot.api.testing.fakeNpc
 import org.tribot.api.testing.fakePlayer
+import org.tribot.api.testing.fakeSpotAnimTable
 import org.tribot.api.testing.fakeWidget
 import org.tribot.automation.script.core.GroundItem
 import org.tribot.automation.script.core.tabs.EquipmentSlot
@@ -763,6 +764,140 @@ class EventDispatcherTest {
         assertTrue(playerEvent != null)
         assertEquals(null, playerEvent.second)
         assertEquals(goblin, playerEvent.third)
+    }
+
+    // =========================================================================
+    // 12b. SpotAnim added (per-frame, multi-spotanim model)
+    // =========================================================================
+
+    @Test
+    fun `spotanim added fires listener for local player`() {
+        val harness = buildDispatcherContext()
+        val dispatcher = EventDispatcher()
+
+        val localPlayer = harness.ctx.client.localPlayer!!
+        every { localPlayer.spotAnims } returns fakeSpotAnimTable(emptyList())
+
+        val events = mutableListOf<Pair<Actor, Int>>()
+        dispatcher.onSpotAnimAdded { actor, id -> events.add(actor to id) }
+        dispatcher.start()
+
+        // Player gets a freeze applied (e.g. ice barrage)
+        every { localPlayer.spotAnims } returns fakeSpotAnimTable(listOf(369))
+        harness.simulateFrame()
+
+        val playerEvent = events.find { it.first == localPlayer }
+        assertTrue(playerEvent != null, "Should fire for the local player")
+        assertEquals(369, playerEvent.second)
+    }
+
+    @Test
+    fun `spotanim added fires for npcs`() {
+        val goblin = fakeNpc(id = 1, name = "Goblin", spotAnims = emptyList())
+        every { goblin.index } returns 10
+
+        val harness = buildDispatcherContext {
+            initialNpcs = listOf(goblin)
+        }
+        val dispatcher = EventDispatcher()
+
+        val events = mutableListOf<Pair<Actor, Int>>()
+        dispatcher.onSpotAnimAdded { actor, id -> events.add(actor to id) }
+        dispatcher.start()
+
+        // NPC gets a splash on a defended cast
+        every { goblin.spotAnims } returns fakeSpotAnimTable(listOf(85))
+        harness.simulateFrame()
+
+        val npcEvent = events.find { it.first == goblin }
+        assertTrue(npcEvent != null, "Should fire for the goblin")
+        assertEquals(85, npcEvent.second)
+    }
+
+    @Test
+    fun `multiple spotanims added simultaneously fire once per id`() {
+        val goblin = fakeNpc(id = 1, name = "Goblin", spotAnims = emptyList())
+        every { goblin.index } returns 10
+
+        val harness = buildDispatcherContext {
+            initialNpcs = listOf(goblin)
+        }
+        val dispatcher = EventDispatcher()
+
+        val ids = mutableListOf<Int>()
+        dispatcher.onSpotAnimAdded { _, id -> ids.add(id) }
+        dispatcher.start()
+
+        // Two spotanims attach in the same frame (e.g. veng + freeze)
+        every { goblin.spotAnims } returns fakeSpotAnimTable(listOf(369, 85))
+        harness.simulateFrame()
+
+        assertEquals(2, ids.size)
+        assertTrue(ids.contains(369))
+        assertTrue(ids.contains(85))
+    }
+
+    @Test
+    fun `spotanim already-active does not re-fire`() {
+        val goblin = fakeNpc(id = 1, name = "Goblin", spotAnims = listOf(369))
+        every { goblin.index } returns 10
+
+        val harness = buildDispatcherContext {
+            initialNpcs = listOf(goblin)
+        }
+        val dispatcher = EventDispatcher()
+
+        var fired = false
+        dispatcher.onSpotAnimAdded { _, _ -> fired = true }
+        dispatcher.start()
+
+        // Same spotanim still active — no re-fire
+        harness.simulateFrame()
+
+        assertFalse(fired)
+    }
+
+    @Test
+    fun `spotanim removed does not fire listener`() {
+        val goblin = fakeNpc(id = 1, name = "Goblin", spotAnims = listOf(369))
+        every { goblin.index } returns 10
+
+        val harness = buildDispatcherContext {
+            initialNpcs = listOf(goblin)
+        }
+        val dispatcher = EventDispatcher()
+
+        var fired = false
+        dispatcher.onSpotAnimAdded { _, _ -> fired = true }
+        dispatcher.start()
+
+        // Spotanim cycle ends — table empty
+        every { goblin.spotAnims } returns fakeSpotAnimTable(emptyList())
+        harness.simulateFrame()
+
+        assertFalse(fired, "Removal should NOT fire (DB pattern: no despawn semantics)")
+    }
+
+    @Test
+    fun `spotanim added fires only for newly-added id when others persist`() {
+        val goblin = fakeNpc(id = 1, name = "Goblin", spotAnims = listOf(369))
+        every { goblin.index } returns 10
+
+        val harness = buildDispatcherContext {
+            initialNpcs = listOf(goblin)
+        }
+        val dispatcher = EventDispatcher()
+
+        val ids = mutableListOf<Int>()
+        dispatcher.onSpotAnimAdded { _, id -> ids.add(id) }
+        dispatcher.start()
+
+        // 369 still active, 85 newly added
+        every { goblin.spotAnims } returns fakeSpotAnimTable(listOf(369, 85))
+        harness.simulateFrame()
+
+        assertEquals(1, ids.size)
+        assertEquals(85, ids[0])
     }
 
     // =========================================================================

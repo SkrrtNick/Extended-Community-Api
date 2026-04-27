@@ -7,6 +7,8 @@ import org.tribot.automation.script.core.GroundItem
 import org.tribot.automation.script.core.tabs.EquippedItem
 import org.tribot.automation.script.core.tabs.InventoryItem
 import org.tribot.automation.script.event.ListenerRegistration
+import java.util.Collections
+import java.util.IdentityHashMap
 
 /**
  * Derives RuneLite-equivalent events by polling game state each tick/frame.
@@ -80,11 +82,18 @@ class EventDispatcher {
     // Animation events (per-frame)
     private val animationChangedListeners = mutableListOf<(actor: Actor, oldAnim: Int, newAnim: Int) -> Unit>()
 
+    // SpotAnim / graphic events (per-frame). Tracks the multi-spotanim model
+    // that RuneLite has used since 2023 — actors can have several active at once.
+    private val spotAnimAddedListeners = mutableListOf<(actor: Actor, spotAnimId: Int) -> Unit>()
+
     // Interacting events (per-frame)
     private val interactingChangedListeners = mutableListOf<(source: Actor, oldTarget: Actor?, newTarget: Actor?) -> Unit>()
 
     // Health events (per-frame, proxy for hitsplats)
     private val healthChangedListeners = mutableListOf<(actor: Actor, oldRatio: Int, newRatio: Int) -> Unit>()
+
+    // Projectile events (per-frame — projectiles spawn mid-tick and live ~1-2 ticks)
+    private val projectileSpawnedListeners = mutableListOf<(Projectile) -> Unit>()
 
     // --- Previous state snapshots ---
 
@@ -107,8 +116,14 @@ class EventDispatcher {
 
     // Frame-rate snapshots (tracked actors)
     private var prevAnimations: MutableMap<Actor, Int> = mutableMapOf()
+    private var prevSpotAnims: MutableMap<Actor, Set<Int>> = mutableMapOf()
     private var prevInteracting: MutableMap<Actor, Actor?> = mutableMapOf()
     private var prevHealthRatios: MutableMap<Actor, Int> = mutableMapOf()
+
+    // Identity-keyed: RuneLite reuses the same Projectile instance for its lifetime.
+    // Equality semantics on Projectile aren't guaranteed across implementations, so
+    // reference identity is the only safe way to dedupe spawn events.
+    private val prevProjectiles: MutableSet<Projectile> = Collections.newSetFromMap(IdentityHashMap())
 
     private var initialized = false
 
@@ -191,8 +206,39 @@ class EventDispatcher {
         widgetClosedListeners.add { id -> if (id == groupId) listener() }
     }
     fun onAnimationChanged(listener: (actor: Actor, oldAnim: Int, newAnim: Int) -> Unit) { animationChangedListeners.add(listener) }
+
+    /**
+     * Fires when a new spotanim is applied to an actor (player or NPC). Spotanims —
+     * also called "graphics" or "gfx" — are visual effects attached to a character:
+     * freezes, teleblocks, vengeance procs, splashes, hit-marks, and similar
+     * spell/effect feedback.
+     *
+     * RuneLite supports multiple simultaneous spotanims on a single actor (e.g. a
+     * player frozen *and* vengeanced at the same time), so this listener fires once
+     * per [spotAnimId] added — a separate invocation per ID joining the actor's
+     * active set.
+     *
+     * Mirrors the DreamBot `AnimationListener.onPlayerSpotAnimation` /
+     * `onNPCSpotAnimation` semantics: only fires on *added*. Spotanim removal
+     * (cycle end) is not reported — consumers that care about effect duration
+     * should track timing themselves from the added event.
+     *
+     * Polled per-frame, so latency is bounded by a single client render frame.
+     */
+    fun onSpotAnimAdded(listener: (actor: Actor, spotAnimId: Int) -> Unit) { spotAnimAddedListeners.add(listener) }
     fun onInteractingChanged(listener: (source: Actor, oldTarget: Actor?, newTarget: Actor?) -> Unit) { interactingChangedListeners.add(listener) }
     fun onHealthChanged(listener: (actor: Actor, oldRatio: Int, newRatio: Int) -> Unit) { healthChangedListeners.add(listener) }
+
+    /**
+     * Fires once when a new [Projectile] appears in the scene. Polled per-frame, so
+     * the latency between server-side spawn and listener invocation is bounded by one
+     * client render frame — fast enough to confirm a player-issued cast within the
+     * tick it was actually committed.
+     *
+     * The same projectile is delivered exactly once per lifetime; subsequent frames
+     * (during which the projectile is still travelling) do not re-fire.
+     */
+    fun onProjectileSpawned(listener: (Projectile) -> Unit) { projectileSpawnedListeners.add(listener) }
 
     /** Register a varbit ID to watch for changes. */
     fun watchVarbit(varbitId: Int) { watchedVarbits.add(varbitId) }
@@ -222,8 +268,10 @@ class EventDispatcher {
 
         // Only register frame polling if there are frame-rate listeners
         if (animationChangedListeners.isNotEmpty() ||
+            spotAnimAddedListeners.isNotEmpty() ||
             interactingChangedListeners.isNotEmpty() ||
-            healthChangedListeners.isNotEmpty()) {
+            healthChangedListeners.isNotEmpty() ||
+            projectileSpawnedListeners.isNotEmpty()) {
             renderRegistration = ctx.events.onBeforeRender {
                 pollFrameEvents()
             }
@@ -259,6 +307,7 @@ class EventDispatcher {
         snapshotGe()
         snapshotWidgets()
         snapshotActorsForFrame()
+        snapshotProjectiles()
     }
 
     private fun snapshotStats() {
@@ -293,13 +342,20 @@ class EventDispatcher {
         allActors.addAll(ctx.worldViews.getTopLevelPlayers())
 
         prevAnimations.clear()
+        prevSpotAnims.clear()
         prevInteracting.clear()
         prevHealthRatios.clear()
         for (actor in allActors) {
             prevAnimations[actor] = actor.animation
+            prevSpotAnims[actor] = currentSpotAnimIds(actor)
             prevInteracting[actor] = actor.interacting
             prevHealthRatios[actor] = actor.healthRatio
         }
+    }
+
+    private fun snapshotProjectiles() {
+        prevProjectiles.clear()
+        for (p in ctx.client.projectiles) prevProjectiles.add(p)
     }
 
     // --- Tick polling ---
@@ -551,6 +607,23 @@ class EventDispatcher {
                 }
             }
 
+            // SpotAnim — fire once per spotanim ID added to the actor's active set.
+            // Removals (cycle end) are intentionally suppressed to mirror DreamBot's
+            // AnimationListener semantics. RuneLite supports multiple concurrent
+            // spotanims, so we diff sets rather than tracking a single value.
+            if (spotAnimAddedListeners.isNotEmpty()) {
+                val current = currentSpotAnimIds(actor)
+                val previous = prevSpotAnims[actor] ?: emptySet()
+                if (current != previous) {
+                    prevSpotAnims[actor] = current
+                    for (id in current) {
+                        if (id !in previous) {
+                            spotAnimAddedListeners.forEach { it(actor, id) }
+                        }
+                    }
+                }
+            }
+
             // Interacting
             if (interactingChangedListeners.isNotEmpty()) {
                 val newTarget = actor.interacting
@@ -575,8 +648,30 @@ class EventDispatcher {
         // Clean up actors that no longer exist
         val actorSet = allActors.toSet()
         prevAnimations.keys.retainAll(actorSet)
+        prevSpotAnims.keys.retainAll(actorSet)
         prevInteracting.keys.retainAll(actorSet)
         prevHealthRatios.keys.retainAll(actorSet)
+
+        if (projectileSpawnedListeners.isNotEmpty()) {
+            val current = ctx.client.projectiles
+            for (p in current) {
+                if (!prevProjectiles.contains(p)) {
+                    projectileSpawnedListeners.forEach { it(p) }
+                }
+            }
+            // Re-seat the snapshot to current. Drops references to projectiles
+            // that have despawned (preventing leaks) and ensures the next frame's
+            // diff fires only for genuinely new projectiles.
+            prevProjectiles.clear()
+            for (p in current) prevProjectiles.add(p)
+        }
+    }
+
+    private fun currentSpotAnimIds(actor: Actor): Set<Int> {
+        val table = actor.spotAnims ?: return emptySet()
+        val ids = HashSet<Int>()
+        for (entry in table) ids.add(entry.id)
+        return ids
     }
 
     // --- Composite key helpers ---
